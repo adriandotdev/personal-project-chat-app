@@ -12,6 +12,8 @@ export const users = pgTable("users", {
 	id: integer().primaryKey().generatedAlwaysAsIdentity(),
 	name: varchar("name").notNull(),
 	username: varchar().unique().notNull(),
+	email: varchar(),
+	mobileNumber: varchar(),
 	password: varchar().notNull(),
 	createdAt: timestamp().defaultNow().notNull(),
 });

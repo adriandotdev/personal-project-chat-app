@@ -8,7 +8,7 @@ CREATE TABLE "conversation_participants" (
 CREATE TABLE "conversations" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "conversations_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
 	"is_group" boolean DEFAULT false,
-	"name" varchar NOT NULL,
+	"name" varchar DEFAULT '',
 	"created_at" timestamp DEFAULT now()
 );
 --> statement-breakpoint
@@ -18,6 +18,16 @@ CREATE TABLE "messages" (
 	"sender_id" integer NOT NULL,
 	"content" text,
 	"created_at" timestamp DEFAULT now()
+);
+--> statement-breakpoint
+CREATE TABLE "users" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "users_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"name" varchar NOT NULL,
+	"username" varchar NOT NULL,
+	"email" varchar,
+	"password" varchar NOT NULL,
+	"createdAt" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "users_username_unique" UNIQUE("username")
 );
 --> statement-breakpoint
 ALTER TABLE "conversation_participants" ADD CONSTRAINT "conversation_participants_conversation_id_conversations_id_fk" FOREIGN KEY ("conversation_id") REFERENCES "public"."conversations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
