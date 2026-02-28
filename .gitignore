@@ -1,0 +1,76 @@
+# Node modules
+node_modules/
+apps/*/node_modules/
+packages/*/node_modules/
+
+# Dependency directories
+.pnpm/
+
+# Build outputs
+dist/
+build/
+apps/*/dist/
+apps/*/build/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment files
+.env
+.env.*
+apps/*/.env
+apps/*/.env.*
+
+# VSCode settings
+.vscode/
+apps/*/.vscode/
+
+# Expo/React Native
+.expo/
+.expo-shared/
+apps/client/.expo/
+apps/client/.expo-shared/
+web-build/
+android/
+ios/
+
+# Drizzle migration meta
+apps/server/drizzle/meta/
+
+# Misc
+*.local
+*.log
+
+# Ignore lock files in node_modules
+**/node_modules/*-lock.yaml
+
+# Ignore output from scripts
+apps/client/scripts/*.log
+
+# Ignore SQLite database files
+*.sqlite
+*.sqlite-journal
+
+# Ignore coverage reports
+coverage/
+
+# Ignore IDE files
+.idea/
+*.iml
+
+# Ignore package manager logs
+apps/server/pnpm-lock.yaml
+apps/client/pnpm-lock.yaml
+
+# Ignore generated snapshots
+apps/server/drizzle/meta/*.json
+
+# TypeScript build cache
+*.tsbuildinfo
