@@ -1,3 +1,6 @@
+import ControlledTextInput, {
+	ControlledTextInputProps,
+} from "@/components/core/ControlledTextInput";
 import { ERROR, PRIMARY, SECONDARY } from "@/constants/colors";
 import {
 	PoppinsBold,
@@ -6,15 +9,14 @@ import {
 } from "@/constants/fontFamily";
 import { URL } from "@/constants/url";
 import { useRouter } from "expo-router";
-import { useState } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { useCallback, useState } from "react";
+import { useForm } from "react-hook-form";
 import {
 	ActivityIndicator,
 	Platform,
 	Pressable,
 	StyleSheet,
 	Text,
-	TextInput,
 	View,
 } from "react-native";
 
@@ -26,9 +28,72 @@ type FormData = {
 	confirmPassword: string;
 };
 
-/**
- * @TODO Make all controlled inputs reusable for consistency in forms!!!!
- */
+type Input = Omit<
+	ControlledTextInputProps,
+	"control" | "errors" | "handleInputChange"
+>;
+
+const inputs: Input[] = [
+	{
+		name: "name",
+		placeholder: "Name",
+		rules: {
+			required: {
+				value: true,
+				message: "Please provide your name",
+			},
+		},
+	},
+	{
+		name: "email",
+		placeholder: "Email",
+		rules: {
+			required: {
+				value: true,
+				message: "Please provide your email",
+			},
+		},
+	},
+	{
+		name: "username",
+		placeholder: "Username",
+		rules: {
+			required: {
+				value: true,
+				message: "Please provide your username",
+			},
+			minLength: {
+				value: 8,
+				message: "Username must be at least eight (8) characters long",
+			},
+		},
+	},
+	{
+		name: "password",
+		placeholder: "Password",
+		rules: {
+			required: {
+				value: true,
+				message: "Please provide your password",
+			},
+			minLength: {
+				value: 8,
+				message: "Password must be at least eight (8) characters long",
+			},
+		},
+	},
+	{
+		name: "confirmPassword",
+		placeholder: "Confirm password",
+		rules: {
+			required: {
+				value: true,
+				message: "Please provide your passord",
+			},
+		},
+	},
+];
+
 export default function SignUp() {
 	const {
 		control,
@@ -103,15 +168,15 @@ export default function SignUp() {
 		}
 	};
 
-	const handleSignInPress = () => router.push("/login");
+	const handleSignInPress = useCallback(() => router.push("/login"), [router]);
 
-	const handleInputChange = (
-		value: string,
-		onFormInputChange: (...event: any[]) => void,
-	) => {
-		onFormInputChange(value);
-		setError("");
-	};
+	const handleInputChange = useCallback(
+		(value: string, onFormInputChange: (...event: any[]) => void) => {
+			onFormInputChange(value);
+			setError("");
+		},
+		[],
+	);
 
 	return (
 		<>
@@ -122,154 +187,18 @@ export default function SignUp() {
 				}}
 			>
 				<Text style={styles.title}>Sign Up</Text>
-				<Controller
-					control={control}
-					rules={{ required: true }}
-					render={({ field: { onChange, onBlur, value } }) => (
-						<View style={styles.inputContainer}>
-							<TextInput
-								style={[
-									styles.input,
-									{ borderColor: errors.name ? ERROR : PRIMARY },
-								]}
-								placeholder="Name"
-								onBlur={onBlur}
-								value={value}
-								onChangeText={(value) => handleInputChange(value, onChange)}
-							/>
-							{errors.name && (
-								<Text style={styles.errorMessage}>
-									Please provide your name
-								</Text>
-							)}
-						</View>
-					)}
-					name="name"
-				/>
 
-				<Controller
-					control={control}
-					rules={{ required: true }}
-					render={({ field: { onChange, onBlur, value } }) => (
-						<View style={styles.inputContainer}>
-							<TextInput
-								style={[
-									styles.input,
-									{ borderColor: errors.email ? ERROR : PRIMARY },
-								]}
-								placeholder="Email"
-								onBlur={onBlur}
-								value={value}
-								onChangeText={(value) => handleInputChange(value, onChange)}
-								autoCapitalize="none"
-							/>
-							{errors.email && (
-								<Text style={styles.errorMessage}>
-									Please provide a valid email
-								</Text>
-							)}
-						</View>
-					)}
-					name="email"
-				/>
-
-				<Controller
-					control={control}
-					rules={{
-						required: {
-							value: true,
-							message: "Please provide your username",
-						},
-						minLength: {
-							value: 8,
-							message: "Username must be at least eight (8) characters long",
-						},
-					}}
-					render={({ field: { onChange, onBlur, value } }) => (
-						<View style={styles.inputContainer}>
-							<TextInput
-								style={[
-									styles.input,
-									{ borderColor: errors.username ? ERROR : PRIMARY },
-								]}
-								placeholder="Username"
-								onBlur={onBlur}
-								value={value}
-								onChangeText={(value) => handleInputChange(value, onChange)}
-								autoCapitalize="none"
-							/>
-							{errors.username && (
-								<Text style={styles.errorMessage}>
-									{errors.username
-										? errors.username.message
-										: "Username is required"}
-								</Text>
-							)}
-						</View>
-					)}
-					name="username"
-				/>
-
-				<Controller
-					control={control}
-					rules={{
-						required: {
-							value: true,
-							message: "Please provide your passord",
-						},
-						minLength: {
-							value: 8,
-							message: "Password must be at least eight (8) characters long",
-						},
-					}}
-					render={({ field: { onChange, onBlur, value } }) => (
-						<View style={styles.inputContainer}>
-							<TextInput
-								style={[
-									styles.input,
-									{ borderColor: errors.password ? ERROR : PRIMARY },
-								]}
-								placeholder="Password"
-								onBlur={onBlur}
-								value={value}
-								onChangeText={(value) => handleInputChange(value, onChange)}
-								autoCapitalize="none"
-							/>
-							{errors.password && (
-								<Text style={styles.errorMessage}>
-									Please provide your password
-								</Text>
-							)}
-						</View>
-					)}
-					name="password"
-				/>
-
-				<Controller
-					control={control}
-					rules={{ required: true }}
-					render={({ field: { onChange, onBlur, value } }) => (
-						<View style={styles.inputContainer}>
-							<TextInput
-								style={[
-									styles.input,
-									{ borderColor: errors.confirmPassword ? ERROR : PRIMARY },
-								]}
-								placeholder="Confirm Password"
-								onBlur={onBlur}
-								value={value}
-								onChangeText={(value) => handleInputChange(value, onChange)}
-								autoCapitalize="none"
-							/>
-							{errors.confirmPassword && (
-								<Text style={styles.errorMessage}>
-									Please confirm your password
-								</Text>
-							)}
-						</View>
-					)}
-					name="confirmPassword"
-				/>
+				{inputs.map((input, index) => (
+					<ControlledTextInput
+						key={index}
+						control={control as any}
+						errors={errors}
+						handleInputChange={handleInputChange}
+						name={input.name}
+						placeholder={input.placeholder}
+						rules={input.rules}
+					/>
+				))}
 
 				<View style={styles.signInContainer}>
 					<Text style={styles.alreadyHaveAnAccountText}>
