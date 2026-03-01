@@ -8,6 +8,7 @@ import {
 	PoppinsSemibold,
 } from "@/constants/fontFamily";
 import { URL } from "@/constants/url";
+import { apiRequest } from "@/utils/apiRequest";
 import { useRouter } from "expo-router";
 import { useCallback, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -123,10 +124,8 @@ export default function SignUp() {
 			return;
 		}
 
-		// @TODO: Make a function for creating a request
-		const signupResponse = await fetch(
-			`http://${URL}:3000/api/v1/auth/signup`,
-			{
+		try {
+			await apiRequest(`http://${URL}:3000/api/v1/auth/signup`, {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
@@ -137,33 +136,23 @@ export default function SignUp() {
 					username: payload.username,
 					password: payload.password,
 				}),
-			},
-		);
+			});
 
-		await signupResponse.json();
-
-		if (signupResponse.status === 201) {
-			// Login and redirect to messages list
-
-			// @TODO: Make this reusable
-			const loginResponse = await fetch(
-				`http://${URL}:3000/api/v1/auth/login`,
-				{
-					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-					},
-					body: JSON.stringify({
-						username: payload.username,
-						password: payload.password,
-					}),
+			await apiRequest(`http://${URL}:3000/api/v1/auth/login`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
 				},
-			);
+				body: JSON.stringify({
+					username: payload.username,
+					password: payload.password,
+				}),
+			});
 
-			await loginResponse.json();
-
-			if (loginResponse.status === 200) {
-				router.replace("/messages");
+			router.replace("/messages");
+		} catch (error) {
+			if (error instanceof Error) {
+				setError(error.message);
 			}
 		}
 	};
