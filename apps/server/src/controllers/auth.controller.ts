@@ -13,16 +13,26 @@ export class AuthController {
 		},
 	) {}
 	signUp = async (req: Request, res: Response) => {
-		const { name, username, password } = req.body;
+		const { name, username, password, email } = req.body;
 
-		const existing = await this.db
+		const [usernameExists] = await this.db
 			.select({ id: users.id })
 			.from(users)
 			.where(eq(users.username, username));
 
-		if (existing.length)
+		if (usernameExists)
 			return res.status(400).json({
 				message: "Username exists",
+			});
+
+		const [emailExists] = await this.db
+			.select({ id: users.id })
+			.from(users)
+			.where(eq(users.email, email));
+
+		if (emailExists)
+			return res.status(400).json({
+				message: "Email exists",
 			});
 
 		const hashedPassword = await bcrypt.hash(password, 12);

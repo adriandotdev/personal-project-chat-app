@@ -43,27 +43,31 @@ export default function MessagesScreen() {
 
 	useEffect(() => {
 		const fetchMessages = async () => {
-			const response = await fetch(`http://${URL}:3000/api/v1/chats`, {
-				method: "GET",
-				headers: {
-					Authorization: `Bearer ${accessToken}`,
-				},
-			});
+			try {
+				const response = await fetch(`http://${URL}:3000/api/v1/chats`, {
+					method: "GET",
+					headers: {
+						Authorization: `Bearer ${accessToken}`,
+					},
+				});
 
-			const data = await response.json();
+				const data = await response.json();
 
-			let chats: ChatItem[] = Object.values(data.data.chats);
-			let participants: Participant[] = data.data.participants;
+				let chats: ChatItem[] = Object.values(data.data.chats);
+				let participants: Participant[] = data.data.participants;
 
-			chats = chats.map((item) => ({
-				...item,
+				chats = chats.map((item) => ({
+					...item,
 
-				chatName: participants.filter((item) => item.id !== userId)[0].name,
-				lastMessage: item.messages[item.messages.length - 1].content,
-			}));
+					chatName: participants.filter((item) => item.id !== userId)[0].name,
+					lastMessage: item.messages[item.messages.length - 1].content,
+				}));
 
-			setParticipants(participants);
-			setChatList(chats);
+				setParticipants(participants);
+				setChatList(chats);
+			} catch {
+				// Silent handler
+			}
 		};
 
 		void fetchMessages();

@@ -24,7 +24,7 @@ export default function Chat() {
 	const userId = useAuthStore((state) => state.userId);
 	const socket = getSocket();
 	const scrollViewRef = useRef<ScrollView>(null);
-	const { top, bottom } = useSafeAreaInsets();
+	const { top } = useSafeAreaInsets();
 	const [typing, setTyping] = useState(false);
 	const typingRef = useRef<NodeJS.Timeout | null>(null);
 

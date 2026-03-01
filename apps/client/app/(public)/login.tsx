@@ -11,14 +11,11 @@ import React, { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
 	ActivityIndicator,
-	Keyboard,
-	KeyboardAvoidingView,
 	Platform,
 	Pressable,
 	StyleSheet,
 	Text,
 	TextInput,
-	TouchableWithoutFeedback,
 	View,
 } from "react-native";
 
@@ -68,102 +65,103 @@ const Login = () => {
 		router.push("/messages");
 	};
 
+	const handleSignUpPress = () => {
+		router.push("/signup");
+	};
+
 	return (
-		<TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-			<KeyboardAvoidingView
-				behavior={Platform.OS === "ios" ? "padding" : "height"}
-				style={styles.container}
+		<>
+			<View
+				style={{
+					flex: 1,
+					justifyContent: "center",
+				}}
 			>
-				<View
-					style={{
-						flex: 1,
-						justifyContent: "center",
-					}}
-				>
-					<Text style={styles.title}>Daily Bytes</Text>
+				<Text style={styles.title}>Daily Bytes</Text>
 
-					<Controller
-						control={control}
-						rules={{ required: true }}
-						render={({ field: { onChange, onBlur, value } }) => (
-							<View style={styles.inputContainer}>
-								<TextInput
-									style={[
-										styles.input,
-										{ borderColor: errors.username ? ERROR : PRIMARY },
-									]}
-									placeholder="Username"
-									onBlur={onBlur}
-									value={value}
-									onChangeText={(value) => {
-										onChange(value);
-										setError("");
-									}}
-									autoCapitalize="none"
-								/>
-								{errors.username && (
-									<Text style={styles.errorMessage}>Username is required</Text>
-								)}
-							</View>
-						)}
-						name="username"
-					/>
-
-					<Controller
-						control={control}
-						rules={{ required: true }}
-						render={({ field: { onChange, onBlur, value } }) => (
-							<View style={styles.inputContainer}>
-								<TextInput
-									style={[
-										styles.input,
-										{ borderColor: errors.password ? ERROR : PRIMARY },
-									]}
-									placeholder="Password"
-									onBlur={onBlur}
-									value={value}
-									onChangeText={(value) => {
-										onChange(value);
-										setError("");
-									}}
-									secureTextEntry
-								/>
-								{errors.password && (
-									<Text style={styles.errorMessage}>Password is required</Text>
-								)}
-							</View>
-						)}
-						name="password"
-					/>
-					<View style={styles.signupSection}>
-						<Text style={styles.dontHaveAccount}>
-							{"Don't have an account yet?"}
-						</Text>
-						<Text style={styles.signupText}>Sign Up</Text>
-					</View>
-					{error && (
-						<View style={styles.errorContainer}>
-							<Text style={styles.errorText}>{error}</Text>
+				<Controller
+					control={control}
+					rules={{ required: true }}
+					render={({ field: { onChange, onBlur, value } }) => (
+						<View style={styles.inputContainer}>
+							<TextInput
+								style={[
+									styles.input,
+									{ borderColor: errors.username ? ERROR : PRIMARY },
+								]}
+								placeholder="Username"
+								onBlur={onBlur}
+								value={value}
+								onChangeText={(value) => {
+									onChange(value);
+									setError("");
+								}}
+								autoCapitalize="none"
+							/>
+							{errors.username && (
+								<Text style={styles.errorMessage}>Username is required</Text>
+							)}
 						</View>
 					)}
-				</View>
+					name="username"
+				/>
 
-				<Pressable
-					disabled={isSubmitting}
-					style={({ pressed }) => [
-						styles.button,
-						{ backgroundColor: pressed ? SECONDARY : PRIMARY },
-					]}
-					onPress={handleSubmit(onSubmit)}
-				>
-					{!isSubmitting ? (
-						<Text style={styles.buttonText}>Log In</Text>
-					) : (
-						<ActivityIndicator color={"black"} />
+				<Controller
+					control={control}
+					rules={{ required: true }}
+					render={({ field: { onChange, onBlur, value } }) => (
+						<View style={styles.inputContainer}>
+							<TextInput
+								style={[
+									styles.input,
+									{ borderColor: errors.password ? ERROR : PRIMARY },
+								]}
+								placeholder="Password"
+								onBlur={onBlur}
+								value={value}
+								onChangeText={(value) => {
+									onChange(value);
+									setError("");
+								}}
+								secureTextEntry
+							/>
+							{errors.password && (
+								<Text style={styles.errorMessage}>Password is required</Text>
+							)}
+						</View>
 					)}
-				</Pressable>
-			</KeyboardAvoidingView>
-		</TouchableWithoutFeedback>
+					name="password"
+				/>
+				<View style={styles.signupSection}>
+					<Text style={styles.dontHaveAccount}>
+						{"Don't have an account yet?"}
+					</Text>
+					<Pressable onPress={handleSignUpPress}>
+						<Text style={styles.signupText}>Sign Up</Text>
+					</Pressable>
+				</View>
+				{error && (
+					<View style={styles.errorContainer}>
+						<Text style={styles.errorText}>{error}</Text>
+					</View>
+				)}
+			</View>
+
+			<Pressable
+				disabled={isSubmitting}
+				style={({ pressed }) => [
+					styles.button,
+					{ backgroundColor: pressed ? SECONDARY : PRIMARY },
+				]}
+				onPress={handleSubmit(onSubmit)}
+			>
+				{!isSubmitting ? (
+					<Text style={styles.buttonText}>Log In</Text>
+				) : (
+					<ActivityIndicator color={"black"} />
+				)}
+			</Pressable>
+		</>
 	);
 };
 
