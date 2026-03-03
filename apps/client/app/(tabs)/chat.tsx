@@ -115,7 +115,7 @@ export default function Chat() {
 				showsVerticalScrollIndicator={false}
 				keyboardDismissMode="on-drag"
 			>
-				{messages.map((message) => (
+				{messages.reverse().map((message) => (
 					<View
 						style={{
 							backgroundColor:

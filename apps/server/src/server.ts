@@ -1,4 +1,4 @@
-import { asc, eq, inArray, sql } from "drizzle-orm";
+import { desc, eq, inArray, sql } from "drizzle-orm";
 import { createServer } from "http";
 import { Server } from "socket.io";
 import app, { db } from "./app";
@@ -43,9 +43,12 @@ io.on("connection", (socket) => {
 				messageId: messages.id,
 			});
 
-		await db.update(conversations).set({
-			lastMessageId: newMessage[0].messageId,
-		});
+		await db
+			.update(conversations)
+			.set({
+				lastMessageId: newMessage[0].messageId,
+			})
+			.where(eq(conversations.id, Number(conversationId)));
 
 		const result = await db
 			.select({
@@ -63,7 +66,7 @@ io.on("connection", (socket) => {
 			)
 			.innerJoin(users, eq(users.id, messages.senderId))
 			.where(eq(conversationParticipants.userId, Number(userId)))
-			.orderBy(asc(messages.createdAt));
+			.orderBy(desc(messages.createdAt));
 
 		// Notify all users joined in this conversation ID.
 		io.to(data.conversationId).emit("receive_message", result);
