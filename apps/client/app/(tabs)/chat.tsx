@@ -37,7 +37,7 @@ export default function Chat() {
 			socket.emit("end_typing", { conversationId });
 		}
 		socket.emit("send_message", {
-			conversationId: messages[0].conversationId,
+			conversationId: conversationId,
 			message,
 		});
 
@@ -159,6 +159,7 @@ export default function Chat() {
 					gap: 8,
 					paddingHorizontal: 16,
 					paddingTop: 8,
+					paddingBottom: Platform.OS === "ios" ? 24 : 18,
 				}}
 			>
 				<TextInput
@@ -169,7 +170,7 @@ export default function Chat() {
 					value={message}
 					onChangeText={(value) => handleTyping(value)}
 				/>
-				<Pressable onPress={handleSendMessage}>
+				<Pressable onPress={handleSendMessage} style={{ marginBottom: 16 }}>
 					<Send color="#f8c534" fill={"#f8c534"} />
 				</Pressable>
 			</View>

@@ -1,7 +1,10 @@
+import { PRIMARY } from "@/constants/colors";
+import { PoppinsMedium } from "@/constants/fontFamily";
 import { URL } from "@/constants/url";
 import { connectSocket, disconnectSocket, getSocket } from "@/services/socket";
 import { useAuthStore } from "@/store/authStore";
 import { Message, useChatStore } from "@/store/chatStore";
+import { apiRequest } from "@/utils/apiRequest";
 import { useRouter } from "expo-router";
 import { SquarePen } from "lucide-react-native";
 
@@ -9,6 +12,7 @@ import React, { useEffect, useState } from "react";
 import {
 	FlatList,
 	Image,
+	Pressable,
 	StyleSheet,
 	Text,
 	TouchableOpacity,
@@ -16,10 +20,12 @@ import {
 } from "react-native";
 
 interface ChatItem {
-	messages: Message[];
-	conversation: { name: string; id: number };
-	chatName: string;
-	lastMessage: string;
+	conversationId: number;
+	messageId: number;
+	message: string;
+	content: string;
+	senderId: number;
+	conversationName: string;
 }
 
 interface Participant {
@@ -53,18 +59,9 @@ export default function MessagesScreen() {
 
 				const data = await response.json();
 
-				let chats: ChatItem[] = Object.values(data.data.chats);
-				let participants: Participant[] = data.data.participants;
+				console.log(data);
 
-				chats = chats.map((item) => ({
-					...item,
-
-					chatName: participants.filter((item) => item.id !== userId)[0].name,
-					lastMessage: item.messages[item.messages.length - 1].content,
-				}));
-
-				setParticipants(participants);
-				setChatList(chats);
+				setChatList(data.data.chats);
 			} catch {
 				// Silent handler
 			}
@@ -83,25 +80,35 @@ export default function MessagesScreen() {
 		};
 	}, [userId]);
 
-	const handleChatPress = (item: ChatItem) => {
-		setMessages(item.messages);
-		setChatName(participants.filter((item) => item.id !== userId)[0].name);
-		setConversationId(item.conversation.id);
+	const handleChatPress = async (item: ChatItem) => {
+		const data = await apiRequest(
+			`http://${URL}:3000/api/v1/chats/messages/${item.conversationId}`,
+			{
+				headers: {
+					Authorization: `Bearer ${accessToken}`,
+				},
+			},
+		);
 
+		const messages = (data as any).data as Message[];
+		setMessages(messages);
+		setChatName(item.conversationName);
+		setConversationId(item.conversationId);
 		const socket = getSocket();
-
-		socket.emit("join_conversation", { conversationId: item.conversation.id });
+		socket.emit("join_conversation", { conversationId: item.conversationId });
 		router.push("/chat");
 	};
 	return (
 		<View style={styles.container}>
 			<View style={styles.header}>
 				<Text style={{ fontSize: 24, fontWeight: 700 }}>Chats</Text>
-				<SquarePen />
+				<Pressable onPress={() => router.push("/users")}>
+					<SquarePen />
+				</Pressable>
 			</View>
 			<FlatList
 				data={chatList}
-				keyExtractor={(item) => item.conversation.name}
+				keyExtractor={(item) => item.conversationId.toString()}
 				renderItem={({ item }) => (
 					<TouchableOpacity
 						onPress={() => handleChatPress(item)}
@@ -116,11 +123,11 @@ export default function MessagesScreen() {
 
 						<View style={styles.textContainer}>
 							<Text style={styles.chatName} numberOfLines={1}>
-								{item.chatName}
+								{item.conversationName}
 							</Text>
 
 							<Text style={styles.lastMessage} numberOfLines={1}>
-								{item.lastMessage}
+								{item.content}
 							</Text>
 						</View>
 					</TouchableOpacity>
@@ -208,5 +215,17 @@ const styles = StyleSheet.create({
 		fontSize: 14,
 		color: "#666",
 		marginTop: 4,
+	},
+	input: {
+		height: 48,
+		borderColor: PRIMARY,
+		borderWidth: 1,
+		borderRadius: 14,
+
+		paddingHorizontal: 12,
+		fontSize: 14,
+		backgroundColor: "#f9f9f9",
+		fontFamily: PoppinsMedium,
+		marginTop: 16,
 	},
 });

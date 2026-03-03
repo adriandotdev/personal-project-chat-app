@@ -1,4 +1,4 @@
-import { asc, eq } from "drizzle-orm";
+import { desc, eq, inArray, not } from "drizzle-orm";
 import { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { Request, Response } from "express";
 import { Pool } from "pg";
@@ -17,64 +17,86 @@ export class ChatController {
 	) {}
 
 	getChats = async (req: Request, res: Response) => {
-		// Fetch chat list
-		const result = await this.db
-			.select({
+		const conversationList = await this.db
+			.selectDistinct({
 				conversationId: conversations.id,
 				conversationName: conversations.name,
-				content: messages.content,
-				senderId: messages.senderId,
-				senderName: users.name,
-				messageId: messages.id,
 			})
 			.from(conversations)
-			.innerJoin(messages, eq(messages.conversationId, conversations.id))
 			.innerJoin(
 				conversationParticipants,
 				eq(conversationParticipants.conversationId, conversations.id),
 			)
-			.innerJoin(users, eq(users.id, messages.senderId))
-			.where(eq(conversationParticipants.userId, req.token.id))
-			.orderBy(asc(messages.createdAt));
+			.where(eq(conversationParticipants.userId, req.token.id));
 
-		// Fetch chat participants
+		const conversationIds = conversationList.map(
+			(convo) => convo.conversationId,
+		);
+
+		const latestMessages = await this.db
+			.select({
+				conversationId: messages.conversationId,
+				messageId: messages.id,
+				content: messages.content,
+				senderId: messages.senderId,
+				createdAt: messages.createdAt,
+				conversationName: conversations.name,
+				isConversationGroup: conversations.isGroup,
+			})
+			.from(messages)
+			.innerJoin(conversations, eq(conversations.lastMessageId, messages.id))
+			.where(inArray(messages.conversationId, conversationIds))
+			.orderBy(desc(messages.createdAt));
+
 		const participants = await this.db
 			.select({
 				id: users.id,
 				name: users.name,
 				username: users.username,
+				conversationId: conversationParticipants.conversationId,
 			})
 			.from(users)
 			.innerJoin(
 				conversationParticipants,
 				eq(conversationParticipants.userId, users.id),
-			);
+			)
+			.where(not(eq(conversationParticipants.userId, req.token.id)));
 
-		// Restructure
-		const mappedResult = result.reduce(
-			(acc: Record<number, any>, current) => {
-				if (!acc[current.conversationId]) {
-					acc[current.conversationId] = {
-						messages: [],
-						conversation: {
-							id: current.conversationId,
-							name: current.conversationName,
-						},
-					};
-				}
-				acc[current.conversationId].messages.push(current);
-				return acc;
-			},
-			{} as Record<number, any[]>,
-		);
+		const mapped = latestMessages.map((lm) => ({
+			...lm,
+			conversationName: lm.isConversationGroup
+				? lm.conversationName
+				: participants.find((p) => p.conversationId === lm.conversationId)
+						?.name,
+		}));
 
 		return res.status(200).json({
 			success: true,
 			message: "Succesfully retrieved chat list",
 			data: {
-				chats: mappedResult,
+				chats: mapped,
 				participants,
 			},
+		});
+	};
+
+	getChatMessagesByConversationId = async (req: Request, res: Response) => {
+		console.log(req.params);
+		const chatMessages = await this.db
+			.select({
+				messageId: messages.id,
+				conversationId: messages.conversationId,
+				content: messages.content,
+				senderId: messages.senderId,
+				senderName: users.name,
+			})
+			.from(messages)
+			.innerJoin(users, eq(users.id, messages.senderId))
+			.where(eq(messages.conversationId, Number(req.params.conversationId)))
+			.orderBy(desc(messages.createdAt));
+
+		return res.status(200).json({
+			data: chatMessages,
 		});
 	};
 }

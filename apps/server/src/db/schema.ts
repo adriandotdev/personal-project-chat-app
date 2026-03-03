@@ -23,6 +23,7 @@ export const conversations = pgTable("conversations", {
 	isGroup: boolean("is_group").default(false),
 	name: varchar().default(""),
 	createdAt: timestamp("created_at").defaultNow(),
+	lastMessageId: integer(),
 });
 
 export const conversationParticipants = pgTable(

@@ -21,6 +21,12 @@ export default function TabLayout() {
 						tabBarStyle: { display: "none" },
 					}}
 				/>
+				<Tabs.Screen
+					name={"users"}
+					options={{
+						tabBarStyle: { display: "none" },
+					}}
+				/>
 			</Tabs>
 		</SafeAreaView>
 	);

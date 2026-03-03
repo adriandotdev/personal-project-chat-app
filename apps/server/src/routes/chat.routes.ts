@@ -7,5 +7,11 @@ const router: Router = Router();
 export const createChatRoutes = (chatController: ChatController) => {
 	router.get("/", verifyAuthToken, chatController.getChats);
 
+	router.get(
+		"/messages/:conversationId",
+		verifyAuthToken,
+		chatController.getChatMessagesByConversationId,
+	);
+
 	return router;
 };

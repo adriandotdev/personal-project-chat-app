@@ -32,10 +32,19 @@ io.on("connection", (socket) => {
 		}
 
 		// Create new message
-		await db.insert(messages).values({
-			conversationId: Number(conversationId),
-			senderId: Number(userId),
-			content: message,
+		const newMessage = await db
+			.insert(messages)
+			.values({
+				conversationId: Number(conversationId),
+				senderId: Number(userId),
+				content: message,
+			})
+			.returning({
+				messageId: messages.id,
+			});
+
+		await db.update(conversations).set({
+			lastMessageId: newMessage[0].messageId,
 		});
 
 		const result = await db
