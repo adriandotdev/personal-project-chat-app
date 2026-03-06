@@ -11,7 +11,7 @@ import { Message, useChatStore } from "@/store/chatStore";
 import { apiRequest } from "@/utils/apiRequest";
 import { useRouter } from "expo-router";
 
-import { SendIcon } from "lucide-react-native";
+import { ArrowLeftIcon, SendIcon } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import {
 	FlatList,
@@ -86,21 +86,29 @@ export default function Users() {
 		router.push("/chat");
 	};
 
+	const handleBackPress = () => {
+		router.back();
+	};
 	return (
 		<View style={styles.container}>
-			<Text
-				style={{
-					fontFamily: PoppinsBold,
-					fontSize: 24,
-					color: PRIMARY,
-					textShadowColor: "#333",
-					textShadowOffset: { width: 3, height: 1 },
-					textShadowRadius: 1,
-					letterSpacing: 2,
-				}}
-			>
-				People You May Know
-			</Text>
+			<View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+				<Pressable onPress={handleBackPress}>
+					<ArrowLeftIcon />
+				</Pressable>
+				<Text
+					style={{
+						fontFamily: PoppinsBold,
+						fontSize: 18,
+						color: PRIMARY,
+						textShadowColor: "#333",
+						textShadowOffset: { width: 3, height: 1 },
+						textShadowRadius: 1,
+						letterSpacing: 2,
+					}}
+				>
+					People You May Know
+				</Text>
+			</View>
 
 			<TextInput
 				style={[styles.input]}

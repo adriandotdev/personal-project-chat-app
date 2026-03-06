@@ -1,7 +1,8 @@
 import { getSocket } from "@/services/socket";
 import { useAuthStore } from "@/store/authStore";
 import { Message, useChatStore } from "@/store/chatStore";
-import { Send } from "lucide-react-native";
+import { useRouter } from "expo-router";
+import { ArrowLeftIcon, Send } from "lucide-react-native";
 import { useEffect, useRef, useState } from "react";
 import {
 	KeyboardAvoidingView,
@@ -30,6 +31,8 @@ export default function Chat() {
 	// Input
 	const [message, setMessage] = useState("");
 
+	const router = useRouter();
+
 	const handleSendMessage = () => {
 		if (typingRef.current) {
 			clearTimeout(typingRef.current);
@@ -56,6 +59,11 @@ export default function Chat() {
 			socket.emit("end_typing", { conversationId });
 		}, 800) as unknown as NodeJS.Timeout;
 	};
+
+	const handleBackPress = () => {
+		router.back();
+	};
+
 	useEffect(() => {
 		socket.on("receive_message", (data: Message[]) => {
 			setMessages(data);
@@ -87,6 +95,9 @@ export default function Chat() {
 					paddingHorizontal: 16,
 				}}
 			>
+				<Pressable style={{ marginRight: 16 }} onPress={handleBackPress}>
+					<ArrowLeftIcon />
+				</Pressable>
 				<View
 					style={[
 						styles.avatar,
