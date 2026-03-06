@@ -5,10 +5,10 @@ import { connectSocket, disconnectSocket, getSocket } from "@/services/socket";
 import { useAuthStore } from "@/store/authStore";
 import { Message, useChatStore } from "@/store/chatStore";
 import { apiRequest } from "@/utils/apiRequest";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { SquarePen } from "lucide-react-native";
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
 	FlatList,
 	Pressable,
@@ -39,38 +39,24 @@ export default function MessagesScreen() {
 
 	const router = useRouter();
 
-	useEffect(() => {
-		const fetchMessages = async () => {
-			try {
-				const response = await fetch(`http://${URL}:3000/api/v1/chats`, {
-					method: "GET",
-					headers: {
-						Authorization: `Bearer ${accessToken}`,
-					},
-				});
+	const fetchMessages = useCallback(async () => {
+		try {
+			const response = await fetch(`http://${URL}:3000/api/v1/chats`, {
+				method: "GET",
+				headers: {
+					Authorization: `Bearer ${accessToken}`,
+				},
+			});
 
-				const data = await response.json();
+			const data = await response.json();
 
-				console.log(data);
+			console.log(data);
 
-				setChatList(data.data.chats);
-			} catch {
-				// Silent handler
-			}
-		};
-
-		void fetchMessages();
-	}, [accessToken]);
-
-	useEffect(() => {
-		if (userId) {
-			connectSocket(userId);
+			setChatList(data.data.chats);
+		} catch {
+			// Silent handler
 		}
-
-		return () => {
-			disconnectSocket();
-		};
-	}, [userId]);
+	}, [accessToken]);
 
 	const handleChatPress = async (item: ChatItem) => {
 		const data = await apiRequest(
@@ -90,6 +76,32 @@ export default function MessagesScreen() {
 		socket.emit("join_conversation", { conversationId: item.conversationId });
 		router.push("/chat");
 	};
+
+	useFocusEffect(() => void fetchMessages());
+	useEffect(() => {
+		void fetchMessages();
+	}, [accessToken, fetchMessages]);
+
+	useEffect(() => {
+		if (userId) {
+			connectSocket(userId);
+		}
+
+		return () => {
+			disconnectSocket();
+		};
+	}, [userId]);
+
+	useEffect(() => {
+		const socket = getSocket();
+
+		if (socket) {
+			socket.on("chat_list_update", async () => {
+				await fetchMessages();
+			});
+		}
+	}, [fetchMessages]);
+
 	return (
 		<View style={styles.container}>
 			<View style={styles.header}>

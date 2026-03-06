@@ -87,6 +87,14 @@ io.on("connection", (socket) => {
 			...new Map(result.map((c) => [c.messageId, c])).values(),
 		];
 
+		mappedParticipants.forEach((participantId) => {
+			if (participantId !== Number(userId)) {
+				io.to(`user_${participantId}`).emit("chat_list_update", {
+					conversationId,
+				});
+			}
+		});
+
 		// Notify all users joined in this conversation ID.
 		io.to(data.conversationId).emit("receive_message", uniqueMessages);
 	});
