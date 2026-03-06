@@ -27,6 +27,7 @@ export interface ControlledTextInputProps<
 		value: string,
 		onFormInputChange: (...event: any[]) => void,
 	) => void;
+	secureTextEntry?: boolean;
 }
 
 export default function ControlledTextInput<
@@ -39,6 +40,7 @@ export default function ControlledTextInput<
 	rules,
 	placeholder,
 	handleInputChange,
+	secureTextEntry,
 }: ControlledTextInputProps<TFieldValues, TName>) {
 	const error = errors[name];
 	const errorMessage =
@@ -60,6 +62,7 @@ export default function ControlledTextInput<
 						value={value}
 						onChangeText={(value) => handleInputChange(value, onChange)}
 						autoCapitalize="none"
+						secureTextEntry={secureTextEntry}
 					/>
 					{errors[name] && (
 						<Text style={styles.errorMessage}>{errorMessage}</Text>

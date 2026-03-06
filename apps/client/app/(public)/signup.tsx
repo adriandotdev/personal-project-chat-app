@@ -32,7 +32,9 @@ type FormData = {
 type Input = Omit<
 	ControlledTextInputProps,
 	"control" | "errors" | "handleInputChange"
->;
+> & {
+	secureTextEntry?: boolean;
+};
 
 const inputs: Input[] = [
 	{
@@ -82,6 +84,7 @@ const inputs: Input[] = [
 				message: "Password must be at least eight (8) characters long",
 			},
 		},
+		secureTextEntry: true,
 	},
 	{
 		name: "confirmPassword",
@@ -92,6 +95,7 @@ const inputs: Input[] = [
 				message: "Please provide your passord",
 			},
 		},
+		secureTextEntry: true,
 	},
 ];
 
@@ -186,6 +190,7 @@ export default function SignUp() {
 						name={input.name}
 						placeholder={input.placeholder}
 						rules={input.rules}
+						secureTextEntry={input.secureTextEntry}
 					/>
 				))}
 
