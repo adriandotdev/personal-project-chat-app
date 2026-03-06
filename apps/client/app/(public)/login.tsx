@@ -220,6 +220,7 @@ const styles = StyleSheet.create({
 
 		marginTop: "auto",
 		marginBottom: Platform.OS === "ios" ? 40 : 16,
+		boxShadow: "5px 5px 0px rgba(0, 0, 0, 1)",
 	},
 	buttonText: {
 		color: "black",
