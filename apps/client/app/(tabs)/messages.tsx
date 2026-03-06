@@ -28,12 +28,6 @@ interface ChatItem {
 	conversationName: string;
 }
 
-interface Participant {
-	id: number;
-	name: string;
-	username: string;
-}
-
 export default function MessagesScreen() {
 	const accessToken = useAuthStore((state) => state.accessToken);
 	const userId = useAuthStore((state) => state.userId);
@@ -43,7 +37,6 @@ export default function MessagesScreen() {
 	const setConversationId = useChatStore((state) => state.setConversationId);
 
 	const [chatList, setChatList] = useState<ChatItem[]>([]);
-	const [participants, setParticipants] = useState<Participant[]>([]);
 
 	const router = useRouter();
 
@@ -68,7 +61,7 @@ export default function MessagesScreen() {
 		};
 
 		void fetchMessages();
-	}, []);
+	}, [accessToken]);
 
 	useEffect(() => {
 		if (userId) {

@@ -52,7 +52,7 @@ export default function Users() {
 		};
 
 		void getUsers();
-	}, []);
+	}, [accessToken]);
 
 	const handleChatNavigation = async (item: User) => {
 		const socket = getSocket();

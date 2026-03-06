@@ -73,7 +73,7 @@ export default function Chat() {
 		return () => {
 			socket.off("receive_message");
 		};
-	}, []);
+	}, [setMessages, socket]);
 
 	return (
 		<KeyboardAvoidingView
