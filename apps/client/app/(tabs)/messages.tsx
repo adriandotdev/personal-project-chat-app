@@ -11,7 +11,6 @@ import { SquarePen } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import {
 	FlatList,
-	Image,
 	Pressable,
 	StyleSheet,
 	Text,
@@ -107,12 +106,20 @@ export default function MessagesScreen() {
 						onPress={() => handleChatPress(item)}
 						style={styles.chatRow}
 					>
-						<Image
-							source={{
-								uri: "https://i.pravatar.cc/150?img=12",
-							}}
-							style={styles.avatar}
-						/>
+						<View
+							style={[
+								styles.avatar,
+								{
+									justifyContent: "center",
+									alignItems: "center",
+									backgroundColor: "#f8c534",
+								},
+							]}
+						>
+							<Text style={{ fontSize: 22, fontWeight: "bold", color: "#fff" }}>
+								{item.conversationName?.charAt(0).toUpperCase()}
+							</Text>
+						</View>
 
 						<View style={styles.textContainer}>
 							<Text style={styles.chatName} numberOfLines={1}>

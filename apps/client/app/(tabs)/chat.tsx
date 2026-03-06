@@ -4,7 +4,6 @@ import { Message, useChatStore } from "@/store/chatStore";
 import { Send } from "lucide-react-native";
 import { useEffect, useRef, useState } from "react";
 import {
-	Image,
 	KeyboardAvoidingView,
 	Platform,
 	Pressable,
@@ -88,12 +87,20 @@ export default function Chat() {
 					paddingHorizontal: 16,
 				}}
 			>
-				<Image
-					source={{
-						uri: "https://i.pravatar.cc/150?img=12",
-					}}
-					style={styles.avatar}
-				/>
+				<View
+					style={[
+						styles.avatar,
+						{
+							justifyContent: "center",
+							alignItems: "center",
+							backgroundColor: "#f8c534",
+						},
+					]}
+				>
+					<Text style={{ fontSize: 22, fontWeight: "bold", color: "#fff" }}>
+						{chatName.charAt(0).toUpperCase()}
+					</Text>
+				</View>
 				<View style={{ padding: 16 }}>
 					<Text style={{ fontWeight: "bold", fontSize: 18 }}>{chatName}</Text>
 					<Text>Active now</Text>

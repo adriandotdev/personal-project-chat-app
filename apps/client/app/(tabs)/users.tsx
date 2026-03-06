@@ -76,6 +76,7 @@ export default function Users() {
 			socket.emit("join_conversation", { conversationId: item.conversationId });
 		} else {
 			console.log("CREATE AND JOIN ");
+			setChatName(item.name);
 			socket.emit("create_conversation", {
 				participantIds: [item.id],
 				creatorId: userId,
@@ -128,13 +129,21 @@ export default function Users() {
 							}}
 						>
 							<View
-								style={{
-									height: 50,
-									width: 50,
-									borderRadius: "100%",
-									backgroundColor: PRIMARY,
-								}}
-							></View>
+								style={[
+									styles.avatar,
+									{
+										justifyContent: "center",
+										alignItems: "center",
+										backgroundColor: "#f8c534",
+									},
+								]}
+							>
+								<Text
+									style={{ fontSize: 22, fontWeight: "bold", color: "#fff" }}
+								>
+									{item.name?.charAt(0).toUpperCase()}
+								</Text>
+							</View>
 							<View style={{ gap: 2 }}>
 								<Text
 									style={{
@@ -188,5 +197,11 @@ const styles = StyleSheet.create({
 		height: 1,
 		backgroundColor: "#e6e1e1",
 		marginTop: 16,
+	},
+	avatar: {
+		width: 50,
+		height: 50,
+		borderRadius: 25,
+		marginRight: 4,
 	},
 });
