@@ -1,4 +1,4 @@
-import { desc, eq, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { createServer } from "http";
 import { Server } from "socket.io";
 import app, { db } from "./app";
@@ -50,26 +50,45 @@ io.on("connection", (socket) => {
 			})
 			.where(eq(conversations.id, Number(conversationId)));
 
+		const participants = await db
+			.select({
+				id: conversationParticipants.userId,
+			})
+			.from(conversationParticipants)
+			.where(eq(conversationParticipants.conversationId, conversationId));
+
+		const mappedParticipants = participants.map((p) => p.id);
+
 		const result = await db
 			.select({
-				conversationId: conversations.id,
+				messageId: messages.id,
 				content: messages.content,
 				senderId: messages.senderId,
+				conversationId: messages.conversationId,
 				senderName: users.name,
-				messageId: messages.id,
 			})
-			.from(conversations)
-			.innerJoin(messages, eq(messages.conversationId, conversations.id))
+			.from(messages)
+			.innerJoin(conversations, eq(conversations.id, messages.conversationId))
 			.innerJoin(
 				conversationParticipants,
 				eq(conversationParticipants.conversationId, conversations.id),
 			)
-			.innerJoin(users, eq(users.id, messages.senderId))
-			.where(eq(conversationParticipants.userId, Number(userId)))
+			.innerJoin(users, eq(users.id, conversationParticipants.userId))
+
+			.where(
+				and(
+					inArray(messages.senderId, mappedParticipants),
+					eq(messages.conversationId, conversationId),
+				),
+			)
 			.orderBy(desc(messages.createdAt));
 
+		const uniqueMessages = [
+			...new Map(result.map((c) => [c.messageId, c])).values(),
+		];
+
 		// Notify all users joined in this conversation ID.
-		io.to(data.conversationId).emit("receive_message", result);
+		io.to(data.conversationId).emit("receive_message", uniqueMessages);
 	});
 
 	socket.on("join_conversation", async (data) => {
@@ -93,7 +112,7 @@ io.on("connection", (socket) => {
 			? data.participantIds
 			: [data.participantIds];
 
-		const creatorId = Number(socket.handshake.query.userId);
+		const creatorId = Number(data.creatorId);
 
 		if (!creatorId || !participantIds.length) return;
 

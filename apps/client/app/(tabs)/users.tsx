@@ -5,9 +5,13 @@ import {
 	PoppinsSemibold,
 } from "@/constants/fontFamily";
 import { URL } from "@/constants/url";
+import { getSocket } from "@/services/socket";
 import { useAuthStore } from "@/store/authStore";
+import { Message, useChatStore } from "@/store/chatStore";
 import { apiRequest } from "@/utils/apiRequest";
-import { UserPlus } from "lucide-react-native";
+import { useRouter } from "expo-router";
+
+import { SendIcon } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import {
 	FlatList,
@@ -22,25 +26,65 @@ type User = {
 	id: number;
 	username: string;
 	name: string;
+	conversationId: number;
 };
 export default function Users() {
 	const accessToken = useAuthStore((state) => state.accessToken);
+	const setChatName = useChatStore((state) => state.setChatName);
+	const setMessages = useChatStore((state) => state.setMessages);
+	const setConversationId = useChatStore((state) => state.setConversationId);
+	const userId = useAuthStore((state) => state.userId);
 
 	const [users, setUsers] = useState<User[]>([]);
 
+	const router = useRouter();
+
 	useEffect(() => {
 		const getUsers = async () => {
-			const data = await apiRequest(`http:${URL}:3000/api/v1/users`, {
+			const data = (await apiRequest(`http:${URL}:3000/api/v1/users`, {
 				headers: {
 					Authorization: `Bearer ${accessToken}`,
 				},
-			});
+			})) as { data: User[] };
 
-			setUsers(data.data as User[]);
+			console.log(data.data);
+			setUsers(data.data);
 		};
 
 		void getUsers();
 	}, []);
+
+	const handleChatNavigation = async (item: User) => {
+		const socket = getSocket();
+
+		if (item.conversationId) {
+			console.log("JOIN ");
+			const data = await apiRequest(
+				`http://${URL}:3000/api/v1/chats/messages/${item.conversationId}`,
+				{
+					headers: {
+						Authorization: `Bearer ${accessToken}`,
+					},
+				},
+			);
+
+			const messages = (data as any).data as Message[];
+			setMessages(messages);
+			setChatName(item.name);
+			setConversationId(item.conversationId);
+
+			socket.emit("join_conversation", { conversationId: item.conversationId });
+		} else {
+			console.log("CREATE AND JOIN ");
+			socket.emit("create_conversation", {
+				participantIds: [item.id],
+				creatorId: userId,
+			});
+		}
+
+		router.push("/chat");
+	};
+
 	return (
 		<View style={styles.container}>
 			<Text
@@ -67,7 +111,8 @@ export default function Users() {
 				data={users}
 				keyExtractor={(item) => item.id.toString()}
 				renderItem={({ item }) => (
-					<View
+					<Pressable
+						onPress={() => handleChatNavigation(item)}
 						style={{
 							flexDirection: "row",
 							justifyContent: "space-between",
@@ -111,10 +156,11 @@ export default function Users() {
 						</View>
 
 						<Pressable style={{ marginTop: 16 }}>
-							<UserPlus color={SECONDARY} />
+							<SendIcon color={SECONDARY} />
 						</Pressable>
-					</View>
+					</Pressable>
 				)}
+				ItemSeparatorComponent={() => <View style={styles.separator} />}
 			/>
 		</View>
 	);
@@ -136,6 +182,11 @@ const styles = StyleSheet.create({
 		fontSize: 14,
 		backgroundColor: "#f9f9f9",
 		fontFamily: PoppinsMedium,
+		marginTop: 16,
+	},
+	separator: {
+		height: 1,
+		backgroundColor: "#e6e1e1",
 		marginTop: 16,
 	},
 });
