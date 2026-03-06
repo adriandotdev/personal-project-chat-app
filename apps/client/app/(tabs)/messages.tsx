@@ -93,7 +93,14 @@ export default function MessagesScreen() {
 	return (
 		<View style={styles.container}>
 			<View style={styles.header}>
-				<Text style={{ fontSize: 24, fontWeight: 700 }}>Chats</Text>
+				<View style={styles.headerRow}>
+					<Pressable style={styles.profileIconStyled}>
+						<Text style={styles.profileIconText}>
+							{"A"?.charAt(0).toUpperCase()}
+						</Text>
+					</Pressable>
+					<Text style={styles.headerTitle}>Chats</Text>
+				</View>
 				<Pressable onPress={() => router.push("/users")}>
 					<SquarePen />
 				</Pressable>
@@ -106,17 +113,8 @@ export default function MessagesScreen() {
 						onPress={() => handleChatPress(item)}
 						style={styles.chatRow}
 					>
-						<View
-							style={[
-								styles.avatar,
-								{
-									justifyContent: "center",
-									alignItems: "center",
-									backgroundColor: "#f8c534",
-								},
-							]}
-						>
-							<Text style={{ fontSize: 22, fontWeight: "bold", color: "#fff" }}>
+						<View style={styles.avatarStyled}>
+							<Text style={styles.avatarText}>
 								{item.conversationName?.charAt(0).toUpperCase()}
 							</Text>
 						</View>
@@ -127,7 +125,9 @@ export default function MessagesScreen() {
 							</Text>
 
 							<Text style={styles.lastMessage} numberOfLines={1}>
-								{item.content}
+								{item.senderId !== userId
+									? item.content
+									: `You: ${item.content}`}
 							</Text>
 						</View>
 					</TouchableOpacity>
@@ -139,6 +139,41 @@ export default function MessagesScreen() {
 }
 
 const styles = StyleSheet.create({
+	headerRow: {
+		flexDirection: "row",
+	},
+	profileIconStyled: {
+		width: 30,
+		height: 30,
+		borderRadius: 25,
+		marginRight: 14,
+		justifyContent: "center",
+		alignItems: "center",
+		backgroundColor: "#f8c534",
+	},
+	profileIconText: {
+		fontSize: 16,
+		fontWeight: "bold",
+		color: "#fff",
+	},
+	headerTitle: {
+		fontSize: 24,
+		fontWeight: 700,
+	},
+	avatarStyled: {
+		width: 50,
+		height: 50,
+		borderRadius: 25,
+		marginRight: 14,
+		justifyContent: "center",
+		alignItems: "center",
+		backgroundColor: "#f8c534",
+	},
+	avatarText: {
+		fontSize: 22,
+		fontWeight: "bold",
+		color: "#fff",
+	},
 	container: {
 		flex: 1,
 		backgroundColor: "#fff",
@@ -199,6 +234,12 @@ const styles = StyleSheet.create({
 	avatar: {
 		width: 50,
 		height: 50,
+		borderRadius: 25,
+		marginRight: 14,
+	},
+	profileIcon: {
+		width: 30,
+		height: 30,
 		borderRadius: 25,
 		marginRight: 14,
 	},
