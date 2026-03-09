@@ -5,8 +5,10 @@ import { useAuthStore } from "@/store/authStore";
 import { useConfirmationModalStore } from "@/store/confirmationModalStore";
 import { apiRequest } from "@/utils/apiRequest";
 import { useRouter } from "expo-router";
+import { ArrowLeft } from "lucide-react-native";
 import React, { useCallback, useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type UserProfile = {
 	name: string;
@@ -26,6 +28,7 @@ function getInitials(name: string) {
 
 export default function ProfileScreen() {
 	const router = useRouter();
+	const { bottom } = useSafeAreaInsets();
 
 	const accessToken = useAuthStore((state) => state.accessToken);
 	const { setModalText, setConfirmationEvent, setCancelEvent } =
@@ -60,6 +63,14 @@ export default function ProfileScreen() {
 
 	return (
 		<View style={styles.container}>
+			<Pressable
+				onPress={() => {
+					router.back();
+				}}
+				style={styles.backButton}
+			>
+				<ArrowLeft />
+			</Pressable>
 			<View style={styles.avatar}>
 				<Text style={styles.avatarText}>{getInitials(profile.name)}</Text>
 			</View>
@@ -83,7 +94,7 @@ export default function ProfileScreen() {
 					});
 					router.push("/confirmation-modal");
 				}}
-				style={styles.logoutButton}
+				style={[styles.logoutButton, { bottom }]}
 			>
 				<Text style={styles.logoutButtonText}>Logout</Text>
 			</Pressable>
@@ -104,9 +115,10 @@ const styles = StyleSheet.create({
 		flex: 1,
 		backgroundColor: colors.background,
 		alignItems: "center",
-		paddingTop: 48,
+
 		paddingHorizontal: 32,
 	},
+	backButton: { alignSelf: "flex-start" },
 	avatar: {
 		width: 96,
 		height: 96,
@@ -154,7 +166,7 @@ const styles = StyleSheet.create({
 		marginBottom: 8,
 	},
 	logoutButton: {
-		marginTop: 32,
+		marginTop: "auto",
 		backgroundColor: colors.primary,
 		paddingVertical: 14,
 		paddingHorizontal: 40,
