@@ -109,47 +109,28 @@ export default function Chat() {
 		<KeyboardAvoidingView
 			behavior={Platform.OS === "ios" ? "padding" : "height"}
 			keyboardVerticalOffset={top}
-			style={{ flex: 1, backgroundColor: "white" }}
+			style={styles.keyboardAvoidingView}
 		>
-			<View
-				style={{
-					flexDirection: "row",
-					alignItems: "center",
-					paddingHorizontal: 16,
-				}}
-			>
-				<Pressable style={{ marginRight: 16 }} onPress={handleBackPress}>
+			<View style={styles.headerRow}>
+				<Pressable style={styles.backButton} onPress={handleBackPress}>
 					<ArrowLeftIcon />
 				</Pressable>
-				<View
-					style={[
-						styles.avatar,
-						{
-							justifyContent: "center",
-							alignItems: "center",
-							backgroundColor: "#f8c534",
-						},
-					]}
-				>
-					<Text style={{ fontSize: 22, fontWeight: "bold", color: "#fff" }}>
+				<View style={[styles.avatar, styles.avatarInner]}>
+					<Text style={styles.avatarText}>
 						{chatName.charAt(0).toUpperCase()}
 					</Text>
 				</View>
-				<View style={{ padding: 16 }}>
-					<Text style={{ fontWeight: "bold", fontSize: 18 }}>{chatName}</Text>
-					<Text>Active now</Text>
+				<View style={styles.headerInfo}>
+					<Text style={styles.headerName}>{chatName}</Text>
+					<Text style={styles.headerStatus}>Active now</Text>
 				</View>
 			</View>
 			<View style={styles.separator} />
 			{/* Chat messages */}
 			<ScrollView
 				ref={scrollViewRef}
-				style={{ flex: 1 }}
-				contentContainerStyle={{
-					paddingBottom: 16,
-					flexGrow: 1,
-					justifyContent: "flex-end",
-				}}
+				style={styles.scrollView}
+				contentContainerStyle={styles.scrollViewContent}
 				onContentSizeChange={() =>
 					scrollViewRef.current?.scrollToEnd({ animated: true })
 				}
@@ -158,50 +139,33 @@ export default function Chat() {
 			>
 				{messages.reverse().map((message) => (
 					<View
-						style={{
-							backgroundColor:
-								message.senderId !== userId ? "#f8c534" : "#c7bfa9",
-							marginTop: 16,
-							minHeight: 30,
-							borderRadius: 16,
-							marginHorizontal: 16,
-							justifyContent: "center",
-							paddingHorizontal: 12,
-							alignSelf:
-								message.senderId !== userId ? "flex-start" : "flex-end",
-							padding: 12,
-						}}
+						style={[
+							styles.message,
+							message.senderId !== userId
+								? styles.messageOther
+								: styles.messageSelf,
+							{
+								alignSelf:
+									message.senderId !== userId ? "flex-start" : "flex-end",
+							},
+						]}
 						key={message.messageId}
 					>
-						<Text style={{ maxWidth: 200 }}>{message.content}</Text>
+						<Text style={styles.messageText}>{message.content}</Text>
 					</View>
 				))}
 				{typing && (
-					<View
-						style={{
-							padding: 8,
-							paddingVertical: 12,
-							backgroundColor: "#f8c534",
-							maxWidth: 80,
-							borderRadius: 16,
-							marginHorizontal: 16,
-							marginTop: 8,
-						}}
-					>
+					<View style={styles.typingIndicator}>
 						<Text>Typing...</Text>
 					</View>
 				)}
 			</ScrollView>
 
 			<View
-				style={{
-					flexDirection: "row",
-					alignItems: "center",
-					gap: 8,
-					paddingHorizontal: 16,
-					paddingTop: 8,
-					paddingBottom: Platform.OS === "ios" ? 24 : 18,
-				}}
+				style={[
+					styles.inputRow,
+					{ paddingBottom: Platform.OS === "ios" ? 24 : 18 },
+				]}
 			>
 				<TextInput
 					multiline
@@ -211,7 +175,7 @@ export default function Chat() {
 					value={message}
 					onChangeText={(value) => handleTyping(value)}
 				/>
-				<Pressable onPress={handleSendMessage} style={{ marginBottom: 16 }}>
+				<Pressable onPress={handleSendMessage} style={styles.sendButton}>
 					<Send color="#f8c534" fill={"#f8c534"} />
 				</Pressable>
 			</View>
@@ -220,14 +184,86 @@ export default function Chat() {
 }
 
 const styles = StyleSheet.create({
+	keyboardAvoidingView: {
+		flex: 1,
+		backgroundColor: "white",
+	},
+	headerRow: {
+		flexDirection: "row",
+		alignItems: "center",
+		paddingHorizontal: 16,
+	},
+	backButton: {
+		marginRight: 16,
+	},
 	avatar: {
 		width: 50,
 		height: 50,
 		borderRadius: 25,
 	},
+	avatarInner: {
+		justifyContent: "center",
+		alignItems: "center",
+		backgroundColor: "#f8c534",
+	},
+	avatarText: {
+		fontSize: 22,
+		fontWeight: "bold",
+		color: "#fff",
+	},
+	headerInfo: {
+		padding: 16,
+	},
+	headerName: {
+		fontWeight: "bold",
+		fontSize: 18,
+	},
+	headerStatus: {},
 	separator: {
 		height: 1,
 		backgroundColor: "#eee",
+	},
+	scrollView: {
+		flex: 1,
+	},
+	scrollViewContent: {
+		paddingBottom: 16,
+		flexGrow: 1,
+		justifyContent: "flex-end",
+	},
+	message: {
+		marginTop: 16,
+		minHeight: 30,
+		borderRadius: 16,
+		marginHorizontal: 16,
+		justifyContent: "center",
+		paddingHorizontal: 12,
+		padding: 12,
+	},
+	messageOther: {
+		backgroundColor: "#f8c534",
+	},
+	messageSelf: {
+		backgroundColor: "#c7bfa9",
+	},
+	messageText: {
+		maxWidth: 200,
+	},
+	typingIndicator: {
+		padding: 8,
+		paddingVertical: 12,
+		backgroundColor: "#f8c534",
+		maxWidth: 80,
+		borderRadius: 16,
+		marginHorizontal: 16,
+		marginTop: 8,
+	},
+	inputRow: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 8,
+		paddingHorizontal: 16,
+		paddingTop: 8,
 	},
 	input: {
 		borderColor: "#ccc",
@@ -241,5 +277,8 @@ const styles = StyleSheet.create({
 		marginTop: "auto",
 		flex: 1,
 		maxHeight: 100,
+	},
+	sendButton: {
+		marginBottom: 16,
 	},
 });
