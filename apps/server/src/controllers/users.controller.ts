@@ -65,4 +65,35 @@ export class UsersController {
 			.status(200)
 			.json({ data: result, message: "Successfully retrieved" });
 	};
+
+	getUserProfile = async (req: Request, res: Response) => {
+		try {
+			const userId = req.token.id;
+
+			const user = await this.db
+				.select({
+					id: users.id,
+					name: users.name,
+					username: users.username,
+					createdAt: users.createdAt,
+					password: users.password,
+				})
+				.from(users)
+				.where(eq(users.id, userId));
+
+			if (!user || user.length === 0) {
+				return res.status(404).json({ message: "User not found" });
+			}
+
+			return res
+				.status(200)
+				.json({ data: user[0], message: "Profile retrieved" });
+		} catch (error) {
+			if (error instanceof Error)
+				return res.status(500).json({
+					message: "Failed to retrieve profile",
+					error: error.message,
+				});
+		}
+	};
 }
