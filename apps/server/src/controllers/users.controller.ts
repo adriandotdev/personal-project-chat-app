@@ -74,6 +74,7 @@ export class UsersController {
 				.select({
 					id: users.id,
 					name: users.name,
+					email: users.email,
 					username: users.username,
 					createdAt: users.createdAt,
 					password: users.password,

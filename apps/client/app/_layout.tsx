@@ -20,7 +20,18 @@ export default function RootLayout() {
 
 	return (
 		<SafeAreaProvider>
-			<Stack screenOptions={{ headerShown: false }} />
+			<Stack screenOptions={{ headerShown: false }}>
+				<Stack.Screen name="index" />
+				<Stack.Screen
+					name="confirmation-modal"
+					options={{
+						presentation: "formSheet",
+						animation: "slide_from_bottom",
+						sheetAllowedDetents: [0.45],
+						sheetGrabberVisible: true,
+					}}
+				/>
+			</Stack>
 		</SafeAreaProvider>
 	);
 }

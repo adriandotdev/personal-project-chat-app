@@ -2,6 +2,7 @@ import { PRIMARY } from "@/constants/colors";
 import { PoppinsBold, PoppinsSemibold } from "@/constants/fontFamily";
 import { URL } from "@/constants/url";
 import { useAuthStore } from "@/store/authStore";
+import { useConfirmationModalStore } from "@/store/confirmationModalStore";
 import { apiRequest } from "@/utils/apiRequest";
 import { useRouter } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
@@ -27,7 +28,8 @@ export default function ProfileScreen() {
 	const router = useRouter();
 
 	const accessToken = useAuthStore((state) => state.accessToken);
-
+	const { setModalText, setConfirmationEvent, setCancelEvent } =
+		useConfirmationModalStore((state) => state);
 	const [profile, setProfile] = useState<UserProfile | null>(null);
 
 	const getUserProfile = useCallback(async () => {
@@ -71,8 +73,15 @@ export default function ProfileScreen() {
 			</View>
 			<Pressable
 				onPress={() => {
-					useAuthStore.persist.clearStorage();
-					router.push("/login");
+					setModalText("Are you sure you want to logout?");
+					setConfirmationEvent(() => {
+						useAuthStore.persist.clearStorage();
+						router.replace("/login");
+					});
+					setCancelEvent(() => {
+						router.back();
+					});
+					router.push("/confirmation-modal");
 				}}
 				style={styles.logoutButton}
 			>
@@ -106,6 +115,7 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 		justifyContent: "center",
 		marginBottom: 24,
+		boxShadow: "2px 1px 0px rgba(0,0,0,1)",
 	},
 	avatarText: {
 		color: colors.text,

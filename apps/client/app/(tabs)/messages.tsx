@@ -4,10 +4,10 @@ import { URL } from "@/constants/url";
 import { connectSocket, disconnectSocket, getSocket } from "@/services/socket";
 import { useAuthStore } from "@/store/authStore";
 import { useChatStore } from "@/store/chatStore";
+import { apiRequest } from "@/utils/apiRequest";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect, useRouter } from "expo-router";
 import { SquarePen } from "lucide-react-native";
-
 import React, { useCallback, useEffect, useState } from "react";
 import {
 	FlatList,
@@ -45,20 +45,23 @@ export default function MessagesScreen() {
 	const fetchMessages = useCallback(async () => {
 		void checkStorage();
 		try {
-			const response = await fetch(`http://${URL}:3000/api/v1/chats`, {
-				method: "GET",
-				headers: {
-					Authorization: `Bearer ${accessToken}`,
+			const response = await apiRequest<{ data: { chats: ChatItem[] } }>(
+				`http://${URL}:3000/api/v1/chats`,
+				{
+					method: "GET",
+					headers: {
+						Authorization: `Bearer ${accessToken}`,
+					},
 				},
-			});
+			);
 
-			const data = await response.json();
-
-			console.log(data);
-
-			setChatList(data.data.chats);
-		} catch {
-			// Silent handler
+			setChatList(response.data.chats);
+		} catch (error) {
+			if (error instanceof Error) {
+				if (error.message.includes("Unauthorized")) {
+					router.replace("/login");
+				}
+			}
 		}
 	}, [accessToken]);
 
