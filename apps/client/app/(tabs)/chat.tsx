@@ -1,6 +1,8 @@
+import { URL } from "@/constants/url";
 import { getSocket } from "@/services/socket";
 import { useAuthStore } from "@/store/authStore";
 import { Message, useChatStore } from "@/store/chatStore";
+import { apiRequest } from "@/utils/apiRequest";
 import { useRouter } from "expo-router";
 import { ArrowLeftIcon, Send } from "lucide-react-native";
 import { useEffect, useRef, useState } from "react";
@@ -27,6 +29,7 @@ export default function Chat() {
 	const { top } = useSafeAreaInsets();
 	const [typing, setTyping] = useState(false);
 	const typingRef = useRef<NodeJS.Timeout | null>(null);
+	const accessToken = useAuthStore((state) => state.accessToken);
 
 	// Input
 	const [message, setMessage] = useState("");
@@ -81,6 +84,26 @@ export default function Chat() {
 			socket.off("receive_message");
 		};
 	}, [setMessages, socket]);
+
+	useEffect(() => {
+		const fetchMessages = async () => {
+			const data = await apiRequest(
+				`http://${URL}:3000/api/v1/chats/messages/${conversationId}`,
+				{
+					headers: {
+						Authorization: `Bearer ${accessToken}`,
+					},
+				},
+			);
+
+			const messages = (data as any).data as Message[];
+			setMessages(messages);
+
+			const socket = getSocket();
+			socket.emit("join_conversation", { conversationId });
+		};
+		void fetchMessages();
+	}, [accessToken, conversationId, setMessages]);
 
 	return (
 		<KeyboardAvoidingView

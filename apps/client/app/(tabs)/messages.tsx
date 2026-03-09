@@ -3,8 +3,7 @@ import { PoppinsMedium } from "@/constants/fontFamily";
 import { URL } from "@/constants/url";
 import { connectSocket, disconnectSocket, getSocket } from "@/services/socket";
 import { useAuthStore } from "@/store/authStore";
-import { Message, useChatStore } from "@/store/chatStore";
-import { apiRequest } from "@/utils/apiRequest";
+import { useChatStore } from "@/store/chatStore";
 import { useFocusEffect, useRouter } from "expo-router";
 import { SquarePen } from "lucide-react-native";
 
@@ -32,7 +31,6 @@ export default function MessagesScreen() {
 	const userId = useAuthStore((state) => state.userId);
 
 	const setChatName = useChatStore((state) => state.setChatName);
-	const setMessages = useChatStore((state) => state.setMessages);
 	const setConversationId = useChatStore((state) => state.setConversationId);
 
 	const [chatList, setChatList] = useState<ChatItem[]>([]);
@@ -59,21 +57,9 @@ export default function MessagesScreen() {
 	}, [accessToken]);
 
 	const handleChatPress = async (item: ChatItem) => {
-		const data = await apiRequest(
-			`http://${URL}:3000/api/v1/chats/messages/${item.conversationId}`,
-			{
-				headers: {
-					Authorization: `Bearer ${accessToken}`,
-				},
-			},
-		);
-
-		const messages = (data as any).data as Message[];
-		setMessages(messages);
 		setChatName(item.conversationName);
 		setConversationId(item.conversationId);
-		const socket = getSocket();
-		socket.emit("join_conversation", { conversationId: item.conversationId });
+
 		router.push("/chat");
 	};
 
