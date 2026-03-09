@@ -77,6 +77,7 @@ export class UsersController {
 					username: users.username,
 					createdAt: users.createdAt,
 					password: users.password,
+					mobileNumber: users.mobileNumber,
 				})
 				.from(users)
 				.where(eq(users.id, userId));

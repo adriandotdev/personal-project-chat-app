@@ -23,6 +23,12 @@ export default function TabLayout() {
 						tabBarStyle: { display: "none" },
 					}}
 				/>
+				<Tabs.Screen
+					name={"profile"}
+					options={{
+						tabBarStyle: { display: "none" },
+					}}
+				/>
 			</Tabs>
 		</SafeAreaView>
 	);

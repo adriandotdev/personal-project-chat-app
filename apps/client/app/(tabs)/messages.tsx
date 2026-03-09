@@ -98,7 +98,10 @@ export default function MessagesScreen() {
 		<View style={styles.container}>
 			<View style={styles.header}>
 				<View style={styles.headerRow}>
-					<Pressable style={styles.profileIconStyled}>
+					<Pressable
+						onPress={() => router.push("/profile")}
+						style={styles.profileIconStyled}
+					>
 						<Text style={styles.profileIconText}>
 							{"A"?.charAt(0).toUpperCase()}
 						</Text>
