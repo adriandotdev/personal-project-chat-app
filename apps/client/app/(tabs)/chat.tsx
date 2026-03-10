@@ -26,7 +26,7 @@ export default function Chat() {
 	const userId = useAuthStore((state) => state.userId);
 	const socket = getSocket();
 	const scrollViewRef = useRef<ScrollView>(null);
-	const { top } = useSafeAreaInsets();
+	const { top, bottom } = useSafeAreaInsets();
 	const [typing, setTyping] = useState(false);
 	const typingRef = useRef<NodeJS.Timeout | null>(null);
 	const accessToken = useAuthStore((state) => state.accessToken);
@@ -107,7 +107,7 @@ export default function Chat() {
 
 	return (
 		<KeyboardAvoidingView
-			behavior={Platform.OS === "ios" ? "padding" : "height"}
+			behavior={Platform.OS === "ios" ? "padding" : "padding"}
 			keyboardVerticalOffset={top}
 			style={styles.keyboardAvoidingView}
 		>
@@ -161,12 +161,7 @@ export default function Chat() {
 				)}
 			</ScrollView>
 
-			<View
-				style={[
-					styles.inputRow,
-					{ paddingBottom: Platform.OS === "ios" ? 24 : 18 },
-				]}
-			>
+			<View style={[styles.inputRow, { marginBottom: bottom }]}>
 				<TextInput
 					multiline
 					style={styles.input}
@@ -175,7 +170,7 @@ export default function Chat() {
 					value={message}
 					onChangeText={(value) => handleTyping(value)}
 				/>
-				<Pressable onPress={handleSendMessage} style={styles.sendButton}>
+				<Pressable onPress={handleSendMessage}>
 					<Send color="#f8c534" fill={"#f8c534"} />
 				</Pressable>
 			</View>
@@ -269,7 +264,7 @@ const styles = StyleSheet.create({
 		borderColor: "#ccc",
 		borderWidth: 1,
 		borderRadius: 32,
-		marginBottom: 16,
+
 		paddingHorizontal: 14,
 		paddingVertical: 12,
 		fontSize: 16,
@@ -277,8 +272,5 @@ const styles = StyleSheet.create({
 		marginTop: "auto",
 		flex: 1,
 		maxHeight: 100,
-	},
-	sendButton: {
-		marginBottom: 16,
 	},
 });

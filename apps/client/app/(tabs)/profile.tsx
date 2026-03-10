@@ -7,7 +7,7 @@ import { apiRequest } from "@/utils/apiRequest";
 import { useRouter } from "expo-router";
 import { ArrowLeft } from "lucide-react-native";
 import React, { useCallback, useEffect, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type UserProfile = {
@@ -28,7 +28,7 @@ function getInitials(name: string) {
 
 export default function ProfileScreen() {
 	const router = useRouter();
-	const { bottom } = useSafeAreaInsets();
+	const { bottom, top } = useSafeAreaInsets();
 
 	const accessToken = useAuthStore((state) => state.accessToken);
 	const { setModalText, setConfirmationEvent, setCancelEvent } =
@@ -67,7 +67,13 @@ export default function ProfileScreen() {
 				onPress={() => {
 					router.back();
 				}}
-				style={styles.backButton}
+				style={[
+					styles.backButton,
+					{
+						paddingTop: Platform.OS === "android" ? top : 0,
+						paddingBottom: bottom,
+					},
+				]}
 			>
 				<ArrowLeft />
 			</Pressable>
@@ -94,7 +100,10 @@ export default function ProfileScreen() {
 					});
 					router.push("/confirmation-modal");
 				}}
-				style={[styles.logoutButton, { bottom }]}
+				style={[
+					styles.logoutButton,
+					{ marginBottom: Platform.OS === "android" ? bottom + 16 : bottom },
+				]}
 			>
 				<Text style={styles.logoutButtonText}>Logout</Text>
 			</Pressable>
