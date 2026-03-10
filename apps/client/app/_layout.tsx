@@ -6,7 +6,14 @@ import {
 	useFonts,
 } from "@expo-google-fonts/poppins";
 import { Stack } from "expo-router";
+import { Platform, UIManager } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+
+if (Platform.OS === "android") {
+	if (UIManager.setLayoutAnimationEnabledExperimental) {
+		UIManager.setLayoutAnimationEnabledExperimental(true);
+	}
+}
 
 export default function RootLayout() {
 	const [fontsLoaded] = useFonts({

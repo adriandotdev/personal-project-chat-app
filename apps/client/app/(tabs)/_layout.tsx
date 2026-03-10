@@ -3,7 +3,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function TabLayout() {
 	return (
-		<SafeAreaView style={{ flex: 1, backgroundColor: "white" }} edges={["top"]}>
+		<SafeAreaView style={{ flex: 1, backgroundColor: "white" }}>
 			<Tabs screenOptions={{ headerShown: false, animation: "shift" }}>
 				<Tabs.Screen
 					name={"messages"}

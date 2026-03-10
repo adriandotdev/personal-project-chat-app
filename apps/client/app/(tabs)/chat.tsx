@@ -1,16 +1,20 @@
 import { URL } from "@/constants/url";
+import { useKeyboardEvent } from "@/hooks/useKeyboardEvent";
 import { getSocket } from "@/services/socket";
 import { useAuthStore } from "@/store/authStore";
 import { Message, useChatStore } from "@/store/chatStore";
 import { apiRequest } from "@/utils/apiRequest";
+import { useHeaderHeight } from "@react-navigation/elements";
 import { useRouter } from "expo-router";
 import { ArrowLeftIcon, Send } from "lucide-react-native";
 import { useEffect, useRef, useState } from "react";
 import {
 	FlatList,
 	KeyboardAvoidingView,
+	LayoutAnimation,
 	Platform,
 	Pressable,
+	StatusBar,
 	StyleSheet,
 	Text,
 	TextInput,
@@ -20,6 +24,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function Chat() {
+	const flexToggle = useKeyboardEvent();
 	const chatName = useChatStore((state) => state.chatName);
 	const messages = useChatStore((state) => state.messages);
 	const conversationId = useChatStore((state) => state.conversationId);
@@ -31,7 +36,7 @@ export default function Chat() {
 	const [typing, setTyping] = useState(false);
 	const typingRef = useRef<NodeJS.Timeout | null>(null);
 	const accessToken = useAuthStore((state) => state.accessToken);
-
+	const headerHeight = useHeaderHeight() + (StatusBar.currentHeight ?? 0);
 	// Input
 	const [message, setMessage] = useState("");
 
@@ -70,10 +75,12 @@ export default function Chat() {
 
 	useEffect(() => {
 		socket.on("receive_message", (data: Message[]) => {
+			LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
 			setMessages(data);
 		});
 
 		socket.on("start_typing", () => {
+			LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
 			setTyping(true);
 		});
 
@@ -111,8 +118,13 @@ export default function Chat() {
 	return (
 		<KeyboardAvoidingView
 			behavior={Platform.OS === "ios" ? "padding" : "padding"}
+			style={
+				flexToggle
+					? [{ flexGrow: 1 }, styles.keyboardAvoidingView]
+					: [{ flex: 1 }, styles.keyboardAvoidingView]
+			}
 			keyboardVerticalOffset={top}
-			style={styles.keyboardAvoidingView}
+			enabled={!flexToggle}
 		>
 			<View style={styles.headerRow}>
 				<Pressable style={styles.backButton} onPress={handleBackPress}>
@@ -131,44 +143,48 @@ export default function Chat() {
 			<View style={styles.separator} />
 
 			{/* Chat messages */}
-			<FlatList
-				ref={scrollViewRef}
-				data={messages}
-				keyExtractor={(item) => item.messageId.toString()}
-				style={styles.scrollView}
-				contentContainerStyle={styles.scrollViewContent}
-				keyboardDismissMode="on-drag"
-				inverted
-				renderItem={({ item }) => (
-					<View
-						style={[
-							styles.message,
-							item.senderId !== userId
-								? styles.messageOther
-								: styles.messageSelf,
-							{
-								alignSelf: item.senderId !== userId ? "flex-start" : "flex-end",
-							},
-						]}
-					>
-						<Text style={styles.messageText}>{item.content}</Text>
-					</View>
-				)}
-				ListHeaderComponent={() =>
-					typing ? (
-						<View style={styles.typingIndicator}>
-							<Text>Typing...</Text>
-						</View>
-					) : null
-				}
-				onContentSizeChange={() => {
-					if (scrollViewRef.current) {
-						scrollViewRef.current.scrollToOffset({ offset: 0, animated: true });
-					}
-				}}
-			/>
 
-			<View style={[styles.inputRow, { marginBottom: bottom }]}>
+			{messages.length > 0 ? (
+				<FlatList
+					ref={scrollViewRef}
+					data={messages}
+					keyExtractor={(item) => item.messageId.toString()}
+					style={styles.scrollView}
+					contentContainerStyle={styles.scrollViewContent}
+					renderItem={({ item }) => (
+						<View
+							style={[
+								styles.message,
+								item.senderId !== userId
+									? styles.messageOther
+									: styles.messageSelf,
+								{
+									alignSelf:
+										item.senderId !== userId ? "flex-start" : "flex-end",
+								},
+							]}
+						>
+							<Text style={styles.messageText}>{item.content}</Text>
+						</View>
+					)}
+					inverted
+					ListHeaderComponent={() =>
+						typing ? (
+							<View style={styles.typingIndicator}>
+								<Text>Typing...</Text>
+							</View>
+						) : null
+					}
+				/>
+			) : (
+				<View
+					style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+				>
+					<Text>Start Conversation</Text>
+				</View>
+			)}
+
+			<View style={[styles.inputRow]}>
 				<TextInput
 					multiline
 					style={styles.input}
@@ -187,7 +203,6 @@ export default function Chat() {
 
 const styles = StyleSheet.create({
 	keyboardAvoidingView: {
-		flex: 1,
 		backgroundColor: "white",
 	},
 	headerRow: {
@@ -266,6 +281,7 @@ const styles = StyleSheet.create({
 		gap: 8,
 		paddingHorizontal: 16,
 		paddingTop: 8,
+		marginBottom: 4,
 	},
 	input: {
 		borderColor: "#ccc",
