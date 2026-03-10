@@ -63,7 +63,7 @@ export default function MessagesScreen() {
 				}
 			}
 		}
-	}, [accessToken]);
+	}, [accessToken, router]);
 
 	const handleChatPress = async (item: ChatItem) => {
 		setChatName(item.conversationName);

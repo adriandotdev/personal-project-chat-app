@@ -7,15 +7,16 @@ import { useRouter } from "expo-router";
 import { ArrowLeftIcon, Send } from "lucide-react-native";
 import { useEffect, useRef, useState } from "react";
 import {
+	FlatList,
 	KeyboardAvoidingView,
 	Platform,
 	Pressable,
-	ScrollView,
 	StyleSheet,
 	Text,
 	TextInput,
 	View,
 } from "react-native";
+
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function Chat() {
@@ -25,7 +26,7 @@ export default function Chat() {
 	const setMessages = useChatStore((state) => state.setMessages);
 	const userId = useAuthStore((state) => state.userId);
 	const socket = getSocket();
-	const scrollViewRef = useRef<ScrollView>(null);
+	const scrollViewRef = useRef<FlatList>(null);
 	const { top, bottom } = useSafeAreaInsets();
 	const [typing, setTyping] = useState(false);
 	const typingRef = useRef<NodeJS.Timeout | null>(null);
@@ -82,6 +83,8 @@ export default function Chat() {
 
 		return () => {
 			socket.off("receive_message");
+			socket.off("start_typing");
+			socket.off("end_typing");
 		};
 	}, [setMessages, socket]);
 
@@ -126,40 +129,44 @@ export default function Chat() {
 				</View>
 			</View>
 			<View style={styles.separator} />
+
 			{/* Chat messages */}
-			<ScrollView
+			<FlatList
 				ref={scrollViewRef}
+				data={messages}
+				keyExtractor={(item) => item.messageId.toString()}
 				style={styles.scrollView}
 				contentContainerStyle={styles.scrollViewContent}
-				onContentSizeChange={() =>
-					scrollViewRef.current?.scrollToEnd({ animated: true })
-				}
-				showsVerticalScrollIndicator={false}
 				keyboardDismissMode="on-drag"
-			>
-				{messages.reverse().map((message) => (
+				inverted
+				renderItem={({ item }) => (
 					<View
 						style={[
 							styles.message,
-							message.senderId !== userId
+							item.senderId !== userId
 								? styles.messageOther
 								: styles.messageSelf,
 							{
-								alignSelf:
-									message.senderId !== userId ? "flex-start" : "flex-end",
+								alignSelf: item.senderId !== userId ? "flex-start" : "flex-end",
 							},
 						]}
-						key={message.messageId}
 					>
-						<Text style={styles.messageText}>{message.content}</Text>
-					</View>
-				))}
-				{typing && (
-					<View style={styles.typingIndicator}>
-						<Text>Typing...</Text>
+						<Text style={styles.messageText}>{item.content}</Text>
 					</View>
 				)}
-			</ScrollView>
+				ListHeaderComponent={() =>
+					typing ? (
+						<View style={styles.typingIndicator}>
+							<Text>Typing...</Text>
+						</View>
+					) : null
+				}
+				onContentSizeChange={() => {
+					if (scrollViewRef.current) {
+						scrollViewRef.current.scrollToOffset({ offset: 0, animated: true });
+					}
+				}}
+			/>
 
 			<View style={[styles.inputRow, { marginBottom: bottom }]}>
 				<TextInput
