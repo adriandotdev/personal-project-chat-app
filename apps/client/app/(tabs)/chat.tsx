@@ -1,12 +1,12 @@
+import { PoppinsMedium, PoppinsRegular } from "@/constants/fontFamily";
 import { URL } from "@/constants/url";
 import { useKeyboardEvent } from "@/hooks/useKeyboardEvent";
 import { getSocket } from "@/services/socket";
 import { useAuthStore } from "@/store/authStore";
 import { Message, useChatStore } from "@/store/chatStore";
 import { apiRequest } from "@/utils/apiRequest";
-import { useHeaderHeight } from "@react-navigation/elements";
 import { useRouter } from "expo-router";
-import { ArrowLeftIcon, Send } from "lucide-react-native";
+import { ArrowLeftIcon, CircleIcon, Send } from "lucide-react-native";
 import { useEffect, useRef, useState } from "react";
 import {
 	FlatList,
@@ -14,7 +14,6 @@ import {
 	LayoutAnimation,
 	Platform,
 	Pressable,
-	StatusBar,
 	StyleSheet,
 	Text,
 	TextInput,
@@ -32,11 +31,11 @@ export default function Chat() {
 	const userId = useAuthStore((state) => state.userId);
 	const socket = getSocket();
 	const scrollViewRef = useRef<FlatList>(null);
-	const { top, bottom } = useSafeAreaInsets();
+	const { top } = useSafeAreaInsets();
 	const [typing, setTyping] = useState(false);
 	const typingRef = useRef<NodeJS.Timeout | null>(null);
 	const accessToken = useAuthStore((state) => state.accessToken);
-	const headerHeight = useHeaderHeight() + (StatusBar.currentHeight ?? 0);
+
 	// Input
 	const [message, setMessage] = useState("");
 
@@ -137,7 +136,10 @@ export default function Chat() {
 				</View>
 				<View style={styles.headerInfo}>
 					<Text style={styles.headerName}>{chatName}</Text>
-					<Text style={styles.headerStatus}>Active now</Text>
+					<View style={styles.acitveNowContainer}>
+						<Text style={styles.headerStatus}>Active now</Text>
+						<CircleIcon fill={"green"} color={"yellowgreen"} size={12} />
+					</View>
 				</View>
 			</View>
 			<View style={styles.separator} />
@@ -228,6 +230,11 @@ const styles = StyleSheet.create({
 		fontWeight: "bold",
 		color: "#fff",
 	},
+	acitveNowContainer: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 4,
+	},
 	headerInfo: {
 		padding: 16,
 	},
@@ -235,7 +242,9 @@ const styles = StyleSheet.create({
 		fontWeight: "bold",
 		fontSize: 18,
 	},
-	headerStatus: {},
+	headerStatus: {
+		fontFamily: PoppinsMedium,
+	},
 	separator: {
 		height: 1,
 		backgroundColor: "#eee",
@@ -256,6 +265,7 @@ const styles = StyleSheet.create({
 		justifyContent: "center",
 		paddingHorizontal: 12,
 		padding: 12,
+		boxShadow: "2px 1px 0px rgba(0,0,0,1)",
 	},
 	messageOther: {
 		backgroundColor: "#f8c534",
@@ -265,6 +275,7 @@ const styles = StyleSheet.create({
 	},
 	messageText: {
 		maxWidth: 200,
+		fontFamily: PoppinsRegular,
 	},
 	typingIndicator: {
 		padding: 8,
