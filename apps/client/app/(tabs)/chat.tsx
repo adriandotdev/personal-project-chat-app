@@ -255,7 +255,7 @@ const styles = StyleSheet.create({
 	scrollViewContent: {
 		paddingBottom: 16,
 		flexGrow: 1,
-		justifyContent: "flex-end",
+		justifyContent: "flex-start",
 	},
 	message: {
 		marginTop: 16,
@@ -265,7 +265,6 @@ const styles = StyleSheet.create({
 		justifyContent: "center",
 		paddingHorizontal: 12,
 		padding: 12,
-		boxShadow: "2px 1px 0px rgba(0,0,0,1)",
 	},
 	messageOther: {
 		backgroundColor: "#f8c534",
@@ -276,6 +275,7 @@ const styles = StyleSheet.create({
 	messageText: {
 		maxWidth: 200,
 		fontFamily: PoppinsRegular,
+		fontSize: 12,
 	},
 	typingIndicator: {
 		padding: 8,

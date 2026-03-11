@@ -5,7 +5,6 @@ import { connectSocket, disconnectSocket, getSocket } from "@/services/socket";
 import { useAuthStore } from "@/store/authStore";
 import { useChatStore } from "@/store/chatStore";
 import { apiRequest } from "@/utils/apiRequest";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect, useRouter } from "expo-router";
 import { SquarePen } from "lucide-react-native";
 import React, { useCallback, useEffect, useState } from "react";
@@ -17,10 +16,6 @@ import {
 	TouchableOpacity,
 	View,
 } from "react-native";
-const checkStorage = async () => {
-	const data = await AsyncStorage.getItem("auth-storage");
-	console.log("STORAGE:", data);
-};
 
 interface ChatItem {
 	conversationId: number;
@@ -43,7 +38,6 @@ export default function MessagesScreen() {
 	const router = useRouter();
 
 	const fetchMessages = useCallback(async () => {
-		void checkStorage();
 		try {
 			const response = await apiRequest<{ data: { chats: ChatItem[] } }>(
 				`http://${URL}:3000/api/v1/chats`,
