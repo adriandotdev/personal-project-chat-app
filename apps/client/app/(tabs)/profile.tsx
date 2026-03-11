@@ -4,6 +4,7 @@ import { URL } from "@/constants/url";
 import { useAuthStore } from "@/store/authStore";
 import { useConfirmationModalStore } from "@/store/confirmationModalStore";
 import { apiRequest } from "@/utils/apiRequest";
+import { getInitials } from "@/utils/getNameInitials";
 import { useRouter } from "expo-router";
 import { ArrowLeft } from "lucide-react-native";
 import React, { useCallback, useEffect, useState } from "react";
@@ -17,14 +18,6 @@ type UserProfile = {
 	password: string;
 	mobileNumber: string;
 };
-
-function getInitials(name: string) {
-	return name
-		.split(" ")
-		.map((n) => n[0])
-		.join("")
-		.toUpperCase();
-}
 
 export default function ProfileScreen() {
 	const router = useRouter();
@@ -186,7 +179,7 @@ const styles = StyleSheet.create({
 		boxShadow: "3px 3px 0px rgba(0, 0, 0, 1)",
 	},
 	logoutButtonText: {
-		color: "white",
+		color: "darkred",
 		fontSize: 16,
 		fontFamily: PoppinsSemibold,
 		letterSpacing: 1,

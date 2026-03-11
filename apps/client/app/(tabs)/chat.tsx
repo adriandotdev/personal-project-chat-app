@@ -5,13 +5,12 @@ import { useKeyboardEvent } from "@/hooks/useKeyboardEvent";
 import { useAuthStore } from "@/store/authStore";
 import { Message, useChatStore } from "@/store/chatStore";
 import { apiRequest } from "@/utils/apiRequest";
+import { FlashList, FlashListRef, ListRenderItem } from "@shopify/flash-list";
 import { useRouter } from "expo-router";
 import { ArrowLeftIcon, CircleIcon, Send } from "lucide-react-native";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-	FlatList,
 	KeyboardAvoidingView,
-	LayoutAnimation,
 	Platform,
 	Pressable,
 	StyleSheet,
@@ -19,7 +18,6 @@ import {
 	TextInput,
 	View,
 } from "react-native";
-
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function Chat() {
@@ -32,7 +30,7 @@ export default function Chat() {
 	const { accessToken, userId } = useAuthStore();
 
 	// Refs
-	const scrollViewRef = useRef<FlatList>(null);
+	const flashListRef = useRef<FlashListRef<Message>>(null);
 	const typingRef = useRef<NodeJS.Timeout | null>(null);
 
 	// States
@@ -42,7 +40,11 @@ export default function Chat() {
 	const flexToggle = useKeyboardEvent();
 	const { socket } = useSocket();
 
-	const handleSendMessage = () => {
+	const orderedMessages = useMemo(() => {
+		return [...messages].reverse();
+	}, [messages]);
+
+	const handleSendMessage = useCallback(() => {
 		try {
 			if (typingRef.current) {
 				clearTimeout(typingRef.current);
@@ -56,52 +58,81 @@ export default function Chat() {
 		} catch (error) {
 			console.error("Error sending message:", error);
 		}
-	};
+	}, [conversationId, message, socket]);
 
-	const handleTyping = (text: string) => {
-		setMessage(text);
+	const handleTyping = useCallback(
+		(text: string) => {
+			setMessage(text);
 
-		socket?.emit("start_typing", { conversationId });
+			socket?.emit("start_typing", { conversationId });
 
-		if (typingRef.current) {
-			clearTimeout(typingRef.current);
-		}
+			if (typingRef.current) {
+				clearTimeout(typingRef.current);
+			}
 
-		typingRef.current = setTimeout(() => {
-			socket?.emit("end_typing", { conversationId });
-		}, 800) as unknown as NodeJS.Timeout;
-	};
+			typingRef.current = setTimeout(() => {
+				socket?.emit("end_typing", { conversationId });
+			}, 800) as unknown as NodeJS.Timeout;
+		},
+		[conversationId, socket],
+	);
 
-	const handleBackPress = () => {
+	const handleBackPress = useCallback(() => {
 		router.back();
-	};
+	}, [router]);
+
+	const renderChatItem: ListRenderItem<Message> = useCallback(
+		({ item, index }: { item: Message; index: number }) => {
+			return (
+				<View
+					style={[
+						styles.message,
+						item.senderId !== userId ? styles.messageOther : styles.messageSelf,
+						{
+							alignSelf: item.senderId !== userId ? "flex-start" : "flex-end",
+						},
+					]}
+				>
+					<Text style={styles.messageText}>{item.content}</Text>
+				</View>
+			);
+		},
+		[userId],
+	);
 
 	useEffect(() => {
 		console.log("SOCKET EVENTS");
-		socket?.on("receive_message", (data: Message[]) => {
-			LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+
+		const receiveMessageEvent = (data: Message[]) => {
 			setMessages(data);
-		});
+		};
 
-		socket?.on("start_typing", () => {
-			LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+		const startTypingEvent = () => {
 			setTyping(true);
-		});
+		};
 
-		socket?.on("end_typing", () => {
+		const endTypingEvent = () => {
 			setTyping(false);
-		});
+		};
 
-		socket?.on("conversation_created", (data) => {
+		const conversationCreated = (data: { conversationId: number }) => {
 			setConversationId(data.conversationId);
-		});
+		};
+
+		socket?.on("receive_message", receiveMessageEvent);
+
+		socket?.on("start_typing", startTypingEvent);
+
+		socket?.on("end_typing", endTypingEvent);
+
+		socket?.on("conversation_created", conversationCreated);
 
 		return () => {
 			console.log("SOCKET EVENTS UNREGISTERED");
-			socket?.off("receive_message");
-			socket?.off("start_typing");
-			socket?.off("end_typing");
-			socket?.off("conversation_created");
+			socket?.off("receive_message", receiveMessageEvent);
+			socket?.off("start_typing", startTypingEvent);
+			socket?.off("end_typing", endTypingEvent);
+			socket?.off("conversation_created", conversationCreated);
 		};
 	}, [setConversationId, setMessages, socket]);
 
@@ -159,41 +190,26 @@ export default function Chat() {
 			{/* Chat messages */}
 
 			{messages.length > 0 ? (
-				<FlatList
-					ref={scrollViewRef}
-					data={messages}
+				<FlashList
+					ref={flashListRef}
 					keyExtractor={(item) => item.messageId.toString()}
 					style={styles.scrollView}
 					contentContainerStyle={styles.scrollViewContent}
-					renderItem={({ item }) => (
-						<View
-							style={[
-								styles.message,
-								item.senderId !== userId
-									? styles.messageOther
-									: styles.messageSelf,
-								{
-									alignSelf:
-										item.senderId !== userId ? "flex-start" : "flex-end",
-								},
-							]}
-						>
-							<Text style={styles.messageText}>{item.content}</Text>
-						</View>
-					)}
-					inverted
-					ListHeaderComponent={() =>
+					data={orderedMessages}
+					renderItem={renderChatItem}
+					ListFooterComponent={() =>
 						typing ? (
 							<View style={styles.typingIndicator}>
 								<Text>Typing...</Text>
 							</View>
 						) : null
 					}
+					onContentSizeChange={() => {
+						flashListRef.current?.scrollToEnd({ animated: false });
+					}}
 				/>
 			) : (
-				<View
-					style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
-				>
+				<View style={styles.startConversationContainer}>
 					<Text>Start Conversation</Text>
 				</View>
 			)}
@@ -305,6 +321,11 @@ const styles = StyleSheet.create({
 		paddingHorizontal: 16,
 		paddingTop: 8,
 		marginBottom: 4,
+	},
+	startConversationContainer: {
+		flex: 1,
+		justifyContent: "center",
+		alignItems: "center",
 	},
 	input: {
 		borderColor: "#ccc",
