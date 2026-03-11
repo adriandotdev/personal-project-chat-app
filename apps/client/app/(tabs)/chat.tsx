@@ -43,16 +43,19 @@ export default function Chat() {
 	const { socket } = useSocket();
 
 	const handleSendMessage = () => {
-		if (typingRef.current) {
-			clearTimeout(typingRef.current);
-			socket?.emit("end_typing", { conversationId });
+		try {
+			if (typingRef.current) {
+				clearTimeout(typingRef.current);
+				socket?.emit("end_typing", { conversationId });
+			}
+			socket?.emit("send_message", {
+				conversationId: conversationId,
+				message,
+			});
+			setMessage("");
+		} catch (error) {
+			console.error("Error sending message:", error);
 		}
-		socket?.emit("send_message", {
-			conversationId: conversationId,
-			message,
-		});
-
-		setMessage("");
 	};
 
 	const handleTyping = (text: string) => {
@@ -102,19 +105,21 @@ export default function Chat() {
 
 	useEffect(() => {
 		const fetchMessages = async () => {
-			const data = await apiRequest(
-				`http://${URL}:3000/api/v1/chats/messages/${conversationId}`,
-				{
-					headers: {
-						Authorization: `Bearer ${accessToken}`,
+			try {
+				const data = await apiRequest(
+					`http://${URL}:3000/api/v1/chats/messages/${conversationId}`,
+					{
+						headers: {
+							Authorization: `Bearer ${accessToken}`,
+						},
 					},
-				},
-			);
-
-			const messages = (data as any).data as Message[];
-			setMessages(messages);
-
-			socket?.emit("join_conversation", { conversationId });
+				);
+				const messages = (data as any).data as Message[];
+				setMessages(messages);
+				socket?.emit("join_conversation", { conversationId });
+			} catch (error) {
+				console.error("Error fetching messages:", error);
+			}
 		};
 		void fetchMessages();
 	}, [accessToken, conversationId, setMessages, socket]);
