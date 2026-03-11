@@ -1,7 +1,7 @@
 import { PRIMARY } from "@/constants/colors";
 import { PoppinsMedium } from "@/constants/fontFamily";
 import { URL } from "@/constants/url";
-import { connectSocket, disconnectSocket, getSocket } from "@/services/socket";
+import { useSocket } from "@/contexts/SocketConnectionContext";
 import { useAuthStore } from "@/store/authStore";
 import { useChatStore } from "@/store/chatStore";
 import { apiRequest } from "@/utils/apiRequest";
@@ -37,6 +37,8 @@ export default function MessagesScreen() {
 
 	const router = useRouter();
 
+	const { socket } = useSocket();
+
 	const fetchMessages = useCallback(async () => {
 		try {
 			const response = await apiRequest<{ data: { chats: ChatItem[] } }>(
@@ -48,7 +50,6 @@ export default function MessagesScreen() {
 					},
 				},
 			);
-
 			setChatList(response.data.chats);
 		} catch (error) {
 			if (error instanceof Error) {
@@ -66,30 +67,28 @@ export default function MessagesScreen() {
 		router.push("/chat");
 	};
 
-	useFocusEffect(() => void fetchMessages());
-	useEffect(() => {
-		void fetchMessages();
-	}, [accessToken, fetchMessages]);
+	useFocusEffect(
+		useCallback(() => {
+			void fetchMessages();
+			return () => {
+				console.log("[ROUTE] messages is unfocused");
+			};
+		}, [fetchMessages]),
+	);
 
 	useEffect(() => {
-		if (userId) {
-			connectSocket(userId);
-		}
+		if (!socket) return;
+
+		const handler = async () => {
+			await fetchMessages();
+		};
+
+		socket.on("chat_list_update", handler);
 
 		return () => {
-			disconnectSocket();
+			socket.off("chat_list_update", handler);
 		};
-	}, [userId]);
-
-	useEffect(() => {
-		const socket = getSocket();
-
-		if (socket) {
-			socket.on("chat_list_update", async () => {
-				await fetchMessages();
-			});
-		}
-	}, [fetchMessages]);
+	}, [socket, fetchMessages]);
 
 	return (
 		<View style={styles.container}>

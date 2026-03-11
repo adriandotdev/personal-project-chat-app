@@ -23,7 +23,10 @@ export default function RootLayout() {
 		Poppins_400Regular,
 	});
 
-	if (!fontsLoaded) return null;
+	if (!fontsLoaded) {
+		console.log("FONTS NOT LOADED");
+		return null;
+	}
 
 	return (
 		<SafeAreaProvider>

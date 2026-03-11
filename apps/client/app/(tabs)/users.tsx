@@ -5,7 +5,7 @@ import {
 	PoppinsSemibold,
 } from "@/constants/fontFamily";
 import { URL } from "@/constants/url";
-import { getSocket } from "@/services/socket";
+import { useSocket } from "@/contexts/SocketConnectionContext";
 import { useAuthStore } from "@/store/authStore";
 import { Message, useChatStore } from "@/store/chatStore";
 import { apiRequest } from "@/utils/apiRequest";
@@ -29,36 +29,23 @@ type User = {
 	conversationId: number;
 };
 export default function Users() {
-	const accessToken = useAuthStore((state) => state.accessToken);
-	const setChatName = useChatStore((state) => state.setChatName);
-	const setMessages = useChatStore((state) => state.setMessages);
-	const setConversationId = useChatStore((state) => state.setConversationId);
-	const userId = useAuthStore((state) => state.userId);
-
-	const [users, setUsers] = useState<User[]>([]);
-
 	const router = useRouter();
 
-	useEffect(() => {
-		const getUsers = async () => {
-			const data = (await apiRequest(`http:${URL}:3000/api/v1/users`, {
-				headers: {
-					Authorization: `Bearer ${accessToken}`,
-				},
-			})) as { data: User[] };
+	// Contexts
+	const { socket } = useSocket();
 
-			console.log(data.data);
-			setUsers(data.data);
-		};
+	// Stores
+	const { accessToken, userId } = useAuthStore((state) => state);
+	const { setChatName, setMessages, setConversationId } = useChatStore(
+		(state) => state,
+	);
 
-		void getUsers();
-	}, [accessToken]);
+	// States
+	const [users, setUsers] = useState<User[]>([]);
 
 	const handleChatNavigation = async (item: User) => {
-		const socket = getSocket();
-
 		if (item.conversationId) {
-			console.log("JOIN ");
+			console.log("[users.tsx] Conversation Exists");
 			const data = await apiRequest(
 				`http://${URL}:3000/api/v1/chats/messages/${item.conversationId}`,
 				{
@@ -73,11 +60,14 @@ export default function Users() {
 			setChatName(item.name);
 			setConversationId(item.conversationId);
 
-			socket.emit("join_conversation", { conversationId: item.conversationId });
+			socket?.emit("join_conversation", {
+				conversationId: item.conversationId,
+			});
 		} else {
-			console.log("CREATE AND JOIN ");
+			console.log("[users.tsx] Create New Conversation");
+
 			setChatName(item.name);
-			socket.emit("create_conversation", {
+			socket?.emit("create_conversation", {
 				participantIds: [item.id],
 				creatorId: userId,
 			});
@@ -89,6 +79,22 @@ export default function Users() {
 	const handleBackPress = () => {
 		router.back();
 	};
+
+	useEffect(() => {
+		const getUsers = async () => {
+			const data = (await apiRequest(`http:${URL}:3000/api/v1/users`, {
+				headers: {
+					Authorization: `Bearer ${accessToken}`,
+				},
+			})) as { data: User[] };
+
+			console.log("[users.tsx] Data: ", data.data);
+			setUsers(data.data);
+		};
+
+		void getUsers();
+	}, [accessToken]);
+
 	return (
 		<View style={styles.container}>
 			<View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>

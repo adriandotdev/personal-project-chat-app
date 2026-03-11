@@ -16,18 +16,22 @@ const io = new Server(httpServer, {});
 
 io.on("connection", (socket) => {
 	const userId = socket.handshake.query.userId;
-	console.log("SOCKET: ", userId);
+	console.log(`[SOCKET] User connected: userId=${userId}`);
 
 	socket.join(`user_${userId}`);
 
 	socket.on("send_message", async (data) => {
-		console.log(`MESSAGE: ${data.message}`);
+		console.log(
+			`[MESSAGE] userId=${userId} sent message to conversationId=${data.conversationId}: ${data.message}`,
+		);
 
 		const { conversationId, message } = data;
 
 		// Check if conversation id and message are provided.
 		if (!conversationId || !message) {
-			console.log("Conversation ID and message are required");
+			console.log(
+				`[ERROR] Missing conversationId or message in send_message event`,
+			);
 			return;
 		}
 
@@ -92,11 +96,17 @@ io.on("connection", (socket) => {
 				io.to(`user_${participantId}`).emit("chat_list_update", {
 					conversationId,
 				});
+				console.log(
+					`[CHAT_LIST_UPDATE] Notified userId=${participantId} about conversationId=${conversationId}`,
+				);
 			}
 		});
 
 		// Notify all users joined in this conversation ID.
 		io.to(data.conversationId).emit("receive_message", uniqueMessages);
+		console.log(
+			`[RECEIVE_MESSAGE] Emitted to conversationId=${data.conversationId}`,
+		);
 	});
 
 	socket.on("join_conversation", async (data) => {
@@ -107,11 +117,15 @@ io.on("connection", (socket) => {
 			.where(eq(conversations.id, data.conversationId));
 
 		if (!conversation?.id) {
-			console.log("Conversation does not exists");
+			console.log(
+				`[ERROR] Conversation does not exist: conversationId=${data.conversationId}`,
+			);
 			return;
 		}
 
-		console.log(`Joined to conversation: ${data.conversationId}`);
+		console.log(
+			`[JOIN_CONVERSATION] userId=${userId} joined conversationId=${data.conversationId}`,
+		);
 		socket.join(data.conversationId);
 	});
 
@@ -122,7 +136,12 @@ io.on("connection", (socket) => {
 
 		const creatorId = Number(data.creatorId);
 
-		if (!creatorId || !participantIds.length) return;
+		if (!creatorId || !participantIds.length) {
+			console.log(
+				`[ERROR] Missing creatorId or participantIds in create_conversation event`,
+			);
+			return;
+		}
 
 		// Include creator in participant list (important for DM)
 		const allParticipantIds = Array.from(
@@ -145,7 +164,9 @@ io.on("connection", (socket) => {
 
 		if (existing.length) {
 			conversationId = existing[0].conversationId;
-			console.log("Conversation already exists");
+			console.log(
+				`[CONVERSATION] Already exists: conversationId=${conversationId}`,
+			);
 		} else {
 			// Conversation creation
 			const [conversation] = await db
@@ -165,34 +186,47 @@ io.on("connection", (socket) => {
 				})),
 			);
 
-			console.log("New conversation created");
+			console.log(
+				`[CONVERSATION] New conversation created: conversationId=${conversationId}, participants=${allParticipantIds.join(",")}`,
+			);
 		}
 
 		// Join socket room
 		socket.join(`cv_${conversationId}`);
+
+		socket.emit("conversation_created", { conversationId });
 
 		// Notify participants
 		allParticipantIds.forEach((userId) => {
 			io.to(`user_${userId}`).emit("new_conversation", {
 				conversationId,
 			});
+			console.log(
+				`[NEW_CONVERSATION] Notified userId=${userId} about conversationId=${conversationId}`,
+			);
 		});
 	});
 
 	socket.on("new_conversation", async (data) => {
-		console.log("NEW CONVERSATION: ", data);
+		console.log(`[NEW_CONVERSATION] Received event:`, data);
 	});
 
 	// Events for typing indicator
 	socket.on("start_typing", (data) => {
 		socket.to(data.conversationId).emit("start_typing");
+		console.log(
+			`[TYPING] userId=${userId} started typing in conversationId=${data.conversationId}`,
+		);
 	});
 
 	socket.on("end_typing", (data) => {
 		socket.to(data.conversationId).emit("end_typing");
+		console.log(
+			`[TYPING] userId=${userId} ended typing in conversationId=${data.conversationId}`,
+		);
 	});
 });
 
 httpServer.listen(PORT, () => {
-	console.log(`Server running on port ${PORT}`);
+	console.log(`[SERVER] Running on port ${PORT}`);
 });

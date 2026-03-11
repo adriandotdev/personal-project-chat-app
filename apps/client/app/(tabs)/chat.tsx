@@ -1,7 +1,7 @@
 import { PoppinsMedium, PoppinsRegular } from "@/constants/fontFamily";
 import { URL } from "@/constants/url";
+import { useSocket } from "@/contexts/SocketConnectionContext";
 import { useKeyboardEvent } from "@/hooks/useKeyboardEvent";
-import { getSocket } from "@/services/socket";
 import { useAuthStore } from "@/store/authStore";
 import { Message, useChatStore } from "@/store/chatStore";
 import { apiRequest } from "@/utils/apiRequest";
@@ -23,30 +23,31 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function Chat() {
-	const flexToggle = useKeyboardEvent();
-	const chatName = useChatStore((state) => state.chatName);
-	const messages = useChatStore((state) => state.messages);
-	const conversationId = useChatStore((state) => state.conversationId);
-	const setMessages = useChatStore((state) => state.setMessages);
-	const userId = useAuthStore((state) => state.userId);
-	const socket = getSocket();
-	const scrollViewRef = useRef<FlatList>(null);
-	const { top } = useSafeAreaInsets();
-	const [typing, setTyping] = useState(false);
-	const typingRef = useRef<NodeJS.Timeout | null>(null);
-	const accessToken = useAuthStore((state) => state.accessToken);
-
-	// Input
-	const [message, setMessage] = useState("");
-
 	const router = useRouter();
+	const { top } = useSafeAreaInsets();
+
+	// Stores
+	const { chatName, messages, conversationId, setMessages, setConversationId } =
+		useChatStore((state) => state);
+	const { accessToken, userId } = useAuthStore();
+
+	// Refs
+	const scrollViewRef = useRef<FlatList>(null);
+	const typingRef = useRef<NodeJS.Timeout | null>(null);
+
+	// States
+	const [message, setMessage] = useState("");
+	const [typing, setTyping] = useState(false);
+
+	const flexToggle = useKeyboardEvent();
+	const { socket } = useSocket();
 
 	const handleSendMessage = () => {
 		if (typingRef.current) {
 			clearTimeout(typingRef.current);
-			socket.emit("end_typing", { conversationId });
+			socket?.emit("end_typing", { conversationId });
 		}
-		socket.emit("send_message", {
+		socket?.emit("send_message", {
 			conversationId: conversationId,
 			message,
 		});
@@ -57,14 +58,14 @@ export default function Chat() {
 	const handleTyping = (text: string) => {
 		setMessage(text);
 
-		socket.emit("start_typing", { conversationId });
+		socket?.emit("start_typing", { conversationId });
 
 		if (typingRef.current) {
 			clearTimeout(typingRef.current);
 		}
 
 		typingRef.current = setTimeout(() => {
-			socket.emit("end_typing", { conversationId });
+			socket?.emit("end_typing", { conversationId });
 		}, 800) as unknown as NodeJS.Timeout;
 	};
 
@@ -73,26 +74,31 @@ export default function Chat() {
 	};
 
 	useEffect(() => {
-		socket.on("receive_message", (data: Message[]) => {
+		socket?.on("receive_message", (data: Message[]) => {
 			LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
 			setMessages(data);
 		});
 
-		socket.on("start_typing", () => {
+		socket?.on("start_typing", () => {
 			LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
 			setTyping(true);
 		});
 
-		socket.on("end_typing", () => {
+		socket?.on("end_typing", () => {
 			setTyping(false);
 		});
 
+		socket?.on("conversation_created", (data) => {
+			setConversationId(data.conversationId);
+		});
+
 		return () => {
-			socket.off("receive_message");
-			socket.off("start_typing");
-			socket.off("end_typing");
+			socket?.off("receive_message");
+			socket?.off("start_typing");
+			socket?.off("end_typing");
+			socket?.off("conversation_created");
 		};
-	}, [setMessages, socket]);
+	}, [setConversationId, setMessages, socket]);
 
 	useEffect(() => {
 		const fetchMessages = async () => {
@@ -108,11 +114,10 @@ export default function Chat() {
 			const messages = (data as any).data as Message[];
 			setMessages(messages);
 
-			const socket = getSocket();
-			socket.emit("join_conversation", { conversationId });
+			socket?.emit("join_conversation", { conversationId });
 		};
 		void fetchMessages();
-	}, [accessToken, conversationId, setMessages]);
+	}, [accessToken, conversationId, setMessages, socket]);
 
 	return (
 		<KeyboardAvoidingView
