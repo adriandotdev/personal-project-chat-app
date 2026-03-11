@@ -6,7 +6,14 @@ export default function TabLayout() {
 	return (
 		<SocketConnectionProvider>
 			<SafeAreaView style={{ flex: 1, backgroundColor: "white" }}>
-				<Tabs screenOptions={{ headerShown: false, animation: "shift" }}>
+				<Tabs
+					screenOptions={{
+						headerShown: false,
+						animation: "shift",
+						lazy: false,
+					}}
+					detachInactiveScreens={false}
+				>
 					<Tabs.Screen
 						name={"messages"}
 						options={{

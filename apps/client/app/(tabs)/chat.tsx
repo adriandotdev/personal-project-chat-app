@@ -77,6 +77,7 @@ export default function Chat() {
 	};
 
 	useEffect(() => {
+		console.log("SOCKET EVENTS");
 		socket?.on("receive_message", (data: Message[]) => {
 			LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
 			setMessages(data);
@@ -96,6 +97,7 @@ export default function Chat() {
 		});
 
 		return () => {
+			console.log("SOCKET EVENTS UNREGISTERED");
 			socket?.off("receive_message");
 			socket?.off("start_typing");
 			socket?.off("end_typing");
