@@ -1,4 +1,4 @@
-import { desc, eq, inArray, not } from "drizzle-orm";
+import { and, desc, eq, inArray, lt, not } from "drizzle-orm";
 import { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { Request, Response } from "express";
 import { Pool } from "pg";
@@ -81,7 +81,16 @@ export class ChatController {
 	};
 
 	getChatMessagesByConversationId = async (req: Request, res: Response) => {
-		console.log(req.params);
+		const cursor = req.query.cursor;
+
+		const whereClause = [
+			eq(messages.conversationId, Number(req.params.conversationId)),
+		];
+
+		if (!isNaN(Number(cursor))) {
+			whereClause.push(lt(messages.id, Number(cursor)));
+		}
+
 		const chatMessages = await this.db
 			.select({
 				messageId: messages.id,
@@ -92,11 +101,15 @@ export class ChatController {
 			})
 			.from(messages)
 			.innerJoin(users, eq(users.id, messages.senderId))
-			.where(eq(messages.conversationId, Number(req.params.conversationId)))
-			.orderBy(desc(messages.createdAt));
+			.where(and(...whereClause))
+			.orderBy(desc(messages.id))
+			.limit(20);
 
 		return res.status(200).json({
 			data: chatMessages,
+			nextCursor: chatMessages.length
+				? chatMessages[chatMessages.length - 1].messageId
+				: null,
 		});
 	};
 }

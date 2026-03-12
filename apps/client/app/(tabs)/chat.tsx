@@ -6,7 +6,7 @@ import { useAuthStore } from "@/store/authStore";
 import { Message, useChatStore } from "@/store/chatStore";
 import { apiRequest } from "@/utils/apiRequest";
 import { FlashList, FlashListRef, ListRenderItem } from "@shopify/flash-list";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { ArrowLeftIcon, CircleIcon, Send } from "lucide-react-native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -25,8 +25,16 @@ export default function Chat() {
 	const { top } = useSafeAreaInsets();
 
 	// Stores
-	const { chatName, messages, conversationId, setMessages, setConversationId } =
-		useChatStore((state) => state);
+	const {
+		chatName,
+		messages,
+		conversationId,
+		setMessages,
+		setConversationId,
+		cursor,
+		setCursor,
+		appendMessages,
+	} = useChatStore((state) => state);
 	const { accessToken, userId } = useAuthStore();
 
 	// Refs
@@ -100,11 +108,34 @@ export default function Chat() {
 		[userId],
 	);
 
+	const fetchMessages = async () => {
+		try {
+			const data = await apiRequest(
+				`http://${URL}:3000/api/v1/chats/messages/${conversationId}?cursor=${cursor}`,
+				{
+					headers: {
+						Authorization: `Bearer ${accessToken}`,
+					},
+				},
+			);
+			const nextMessages = (data as any).data as Message[];
+			const nextCursor = (data as any).nextCursor as number;
+
+			if (nextCursor === null) setCursor(undefined);
+			else setCursor(nextCursor);
+			appendMessages(nextMessages);
+			socket?.emit("join_conversation", { conversationId });
+		} catch (error) {
+			console.error("Error fetching messages:", error);
+		}
+	};
+
 	useEffect(() => {
 		console.log("SOCKET EVENTS");
 
 		const receiveMessageEvent = (data: Message[]) => {
 			setMessages(data);
+			flashListRef.current?.scrollToEnd({ animated: false });
 		};
 
 		const startTypingEvent = () => {
@@ -136,26 +167,17 @@ export default function Chat() {
 		};
 	}, [setConversationId, setMessages, socket]);
 
-	useEffect(() => {
-		const fetchMessages = async () => {
-			try {
-				const data = await apiRequest(
-					`http://${URL}:3000/api/v1/chats/messages/${conversationId}`,
-					{
-						headers: {
-							Authorization: `Bearer ${accessToken}`,
-						},
-					},
-				);
-				const messages = (data as any).data as Message[];
-				setMessages(messages);
-				socket?.emit("join_conversation", { conversationId });
-			} catch (error) {
-				console.error("Error fetching messages:", error);
-			}
-		};
-		void fetchMessages();
-	}, [accessToken, conversationId, setMessages, socket]);
+	useFocusEffect(
+		useCallback(() => {
+			void fetchMessages();
+			flashListRef.current?.scrollToEnd();
+			return () => {
+				console.log("chat screen unfocused");
+				setMessages([]);
+				setCursor(undefined);
+			};
+		}, [accessToken, conversationId, setMessages, socket]),
+	);
 
 	return (
 		<KeyboardAvoidingView
@@ -204,9 +226,17 @@ export default function Chat() {
 							</View>
 						) : null
 					}
-					onContentSizeChange={() => {
-						flashListRef.current?.scrollToEnd({ animated: false });
+					// onContentSizeChange={() => {
+					// 	flashListRef.current?.scrollToEnd({ animated: false });
+					// }}
+					onStartReached={() => {
+						console.log("START REACHED");
+						if (!cursor) return;
+
+						console.log("CURSOR: ", cursor);
+						void fetchMessages();
 					}}
+					onStartReachedThreshold={0.05}
 				/>
 			) : (
 				<View style={styles.startConversationContainer}>
@@ -283,7 +313,7 @@ const styles = StyleSheet.create({
 	scrollViewContent: {
 		paddingBottom: 16,
 		flexGrow: 1,
-		justifyContent: "flex-start",
+		justifyContent: "flex-end",
 	},
 	message: {
 		marginTop: 16,
