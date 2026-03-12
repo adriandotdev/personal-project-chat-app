@@ -139,6 +139,7 @@ export default function Chat() {
 		};
 
 		const startTypingEvent = () => {
+			flashListRef.current?.scrollToEnd({ animated: true });
 			setTyping(true);
 		};
 
@@ -170,7 +171,7 @@ export default function Chat() {
 	useFocusEffect(
 		useCallback(() => {
 			void fetchMessages();
-			flashListRef.current?.scrollToEnd();
+
 			return () => {
 				console.log("chat screen unfocused");
 				setMessages([]);
@@ -226,9 +227,6 @@ export default function Chat() {
 							</View>
 						) : null
 					}
-					// onContentSizeChange={() => {
-					// 	flashListRef.current?.scrollToEnd({ animated: false });
-					// }}
 					onStartReached={() => {
 						console.log("START REACHED");
 						if (!cursor) return;

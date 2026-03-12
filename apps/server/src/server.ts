@@ -63,33 +63,20 @@ io.on("connection", (socket) => {
 
 		const mappedParticipants = participants.map((p) => p.id);
 
-		const result = await db
+		// Fetch latest 20 messages for the conversation, ordered by descending message ID
+		const latestMessages = await db
 			.select({
 				messageId: messages.id,
+				conversationId: messages.conversationId,
 				content: messages.content,
 				senderId: messages.senderId,
-				conversationId: messages.conversationId,
 				senderName: users.name,
 			})
 			.from(messages)
-			.innerJoin(conversations, eq(conversations.id, messages.conversationId))
-			.innerJoin(
-				conversationParticipants,
-				eq(conversationParticipants.conversationId, conversations.id),
-			)
-			.innerJoin(users, eq(users.id, conversationParticipants.userId))
-
-			.where(
-				and(
-					inArray(messages.senderId, mappedParticipants),
-					eq(messages.conversationId, conversationId),
-				),
-			)
-			.orderBy(desc(messages.createdAt));
-
-		const uniqueMessages = [
-			...new Map(result.map((c) => [c.messageId, c])).values(),
-		];
+			.innerJoin(users, eq(users.id, messages.senderId))
+			.where(and(eq(messages.conversationId, Number(conversationId))))
+			.orderBy(desc(messages.id))
+			.limit(20);
 
 		mappedParticipants.forEach((participantId) => {
 			if (participantId !== Number(userId)) {
@@ -103,7 +90,7 @@ io.on("connection", (socket) => {
 		});
 
 		// Notify all users joined in this conversation ID.
-		io.to(data.conversationId).emit("receive_message", uniqueMessages);
+		io.to(data.conversationId).emit("receive_message", latestMessages);
 		console.log(
 			`[RECEIVE_MESSAGE] Emitted to conversationId=${data.conversationId}`,
 		);
