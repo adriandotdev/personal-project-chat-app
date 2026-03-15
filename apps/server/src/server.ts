@@ -88,9 +88,14 @@ io.on("connection", (socket) => {
 				);
 			}
 		});
-
 		// Notify all users joined in this conversation ID.
-		io.to(data.conversationId).emit("receive_message", latestMessages);
+		io.to(data.conversationId).emit("receive_message", {
+			messages: latestMessages,
+			nextCursor: latestMessages.length
+				? latestMessages[latestMessages.length - 1].messageId
+				: null,
+		});
+
 		console.log(
 			`[RECEIVE_MESSAGE] Emitted to conversationId=${data.conversationId}`,
 		);

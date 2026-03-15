@@ -11,6 +11,7 @@ import { ArrowLeftIcon, CircleIcon, Send } from "lucide-react-native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
 	KeyboardAvoidingView,
+	LayoutAnimation,
 	Platform,
 	Pressable,
 	StyleSheet,
@@ -63,6 +64,8 @@ export default function Chat() {
 				message,
 			});
 			setMessage("");
+			setCursor(undefined);
+			flashListRef.current?.scrollToEnd();
 		} catch (error) {
 			console.error("Error sending message:", error);
 		}
@@ -101,7 +104,10 @@ export default function Chat() {
 						},
 					]}
 				>
-					<Text style={styles.messageText}>{item.content}</Text>
+					<Text style={styles.messageText}>
+						{item.messageId}
+						{item.content}
+					</Text>
 				</View>
 			);
 		},
@@ -133,13 +139,19 @@ export default function Chat() {
 	useEffect(() => {
 		console.log("SOCKET EVENTS");
 
-		const receiveMessageEvent = (data: Message[]) => {
-			setMessages(data);
+		const receiveMessageEvent = (data: {
+			messages: Message[];
+			nextCursor: number | undefined;
+		}) => {
+			setCursor(data.nextCursor);
+			setMessages(data.messages);
+
 			flashListRef.current?.scrollToEnd({ animated: false });
 		};
 
 		const startTypingEvent = () => {
-			flashListRef.current?.scrollToEnd({ animated: true });
+			flashListRef.current?.scrollToEnd({ animated: false });
+			LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
 			setTyping(true);
 		};
 
@@ -220,6 +232,9 @@ export default function Chat() {
 					contentContainerStyle={styles.scrollViewContent}
 					data={orderedMessages}
 					renderItem={renderChatItem}
+					initialScrollIndex={
+						orderedMessages.length > 0 ? orderedMessages.length - 1 : 0
+					}
 					ListFooterComponent={() =>
 						typing ? (
 							<View style={styles.typingIndicator}>
