@@ -1,3 +1,4 @@
+import { useAuthStore } from "@/store/authStore";
 import {
 	Poppins_400Regular,
 	Poppins_500Medium,
@@ -5,15 +6,17 @@ import {
 	Poppins_700Bold,
 	useFonts,
 } from "@expo-google-fonts/poppins";
-import { Stack } from "expo-router";
+import { SplashScreen, Stack } from "expo-router";
+import { useEffect } from "react";
 import { Platform, UIManager } from "react-native";
-import { SafeAreaProvider } from "react-native-safe-area-context";
 
 if (Platform.OS === "android") {
 	if (UIManager.setLayoutAnimationEnabledExperimental) {
 		UIManager.setLayoutAnimationEnabledExperimental(true);
 	}
 }
+
+SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
 	const [fontsLoaded] = useFonts({
@@ -22,26 +25,39 @@ export default function RootLayout() {
 		Poppins_500Medium,
 		Poppins_400Regular,
 	});
+	const { authenticated } = useAuthStore();
+
+	useEffect(() => {
+		if (fontsLoaded) {
+			SplashScreen.hideAsync();
+		}
+	}, [fontsLoaded]);
 
 	if (!fontsLoaded) {
-		console.log("FONTS NOT LOADED");
+		console.log("FONTS LOADED");
 		return null;
 	}
 
 	return (
-		<SafeAreaProvider>
-			<Stack screenOptions={{ headerShown: false }}>
+		// <SafeAreaProvider>
+		<Stack screenOptions={{ headerShown: false }}>
+			<Stack.Protected guard={authenticated}>
+				<Stack.Screen name="(tabs)" />
+			</Stack.Protected>
+			<Stack.Protected guard={!authenticated}>
 				<Stack.Screen name="index" />
-				<Stack.Screen
-					name="confirmation-modal"
-					options={{
-						presentation: "formSheet",
-						animation: "slide_from_bottom",
-						sheetAllowedDetents: [0.45],
-						sheetGrabberVisible: true,
-					}}
-				/>
-			</Stack>
-		</SafeAreaProvider>
+			</Stack.Protected>
+
+			<Stack.Screen
+				name="confirmation-modal"
+				options={{
+					presentation: "formSheet",
+					animation: "slide_from_bottom",
+					sheetAllowedDetents: [0.45],
+					sheetGrabberVisible: true,
+				}}
+			/>
+		</Stack>
+		// </SafeAreaProvider>
 	);
 }

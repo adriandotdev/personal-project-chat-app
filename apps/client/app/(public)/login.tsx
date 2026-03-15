@@ -25,8 +25,9 @@ type FormData = {
 };
 
 const Login = () => {
-	const setAccessToken = useAuthStore((state) => state.setAccessToken);
-	const setUserId = useAuthStore((state) => state.setUserId);
+	const { setAccessToken, setUserId, setAuthenticated } = useAuthStore(
+		(state) => state,
+	);
 	const [error, setError] = useState("");
 	const router = useRouter();
 
@@ -61,6 +62,7 @@ const Login = () => {
 		}
 		setAccessToken(data.accessToken);
 		setUserId(data.userId);
+		setAuthenticated(true);
 
 		router.push("/messages");
 	};

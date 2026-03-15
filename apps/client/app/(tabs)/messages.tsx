@@ -27,17 +27,13 @@ interface ChatItem {
 }
 
 export default function MessagesScreen() {
-	const accessToken = useAuthStore((state) => state.accessToken);
-	const userId = useAuthStore((state) => state.userId);
-
-	const setChatName = useChatStore((state) => state.setChatName);
-	const setConversationId = useChatStore((state) => state.setConversationId);
-
-	const [chatList, setChatList] = useState<ChatItem[]>([]);
-
 	const router = useRouter();
 
+	const { accessToken, userId, setAuthenticated } = useAuthStore();
+	const { setChatName, setConversationId } = useChatStore();
 	const { socket } = useSocket();
+
+	const [chatList, setChatList] = useState<ChatItem[]>([]);
 
 	const fetchMessages = useCallback(async () => {
 		try {
@@ -53,7 +49,7 @@ export default function MessagesScreen() {
 			setChatList(response.data.chats);
 		} catch (error) {
 			if (error instanceof Error) {
-				if (error.message.includes("Unauthorized")) {
+				if (error.message.includes("Session expired")) {
 					router.replace("/login");
 				}
 			}

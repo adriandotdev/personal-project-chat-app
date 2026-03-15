@@ -130,6 +130,7 @@ export default function Chat() {
 			socket?.emit("join_conversation", { conversationId });
 		} catch (error) {
 			console.error("Error fetching messages:", error);
+			router.replace("/login");
 		}
 	};
 
