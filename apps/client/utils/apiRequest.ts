@@ -85,15 +85,18 @@ export async function apiRequest<T>(
 	} catch (error) {
 		const err = error as AxiosError;
 
-		if (err.response && err.response.status === 401 && retry) {
-			console.warn(
-				"[apiRequest] 401 detected, attempting token refresh and retry...",
-			);
-			try {
-				await refreshAccessToken();
-				return apiRequest<T>(url, options, false);
-			} catch (refreshError) {
-				throw new Error("Session expired. Please log in again.");
+		const errData = err.response?.data as { message: string };
+
+		if (err.response && err.response.status === 401) {
+			if (retry) {
+				try {
+					await refreshAccessToken();
+					return apiRequest<T>(url, options, false);
+				} catch {
+					throw new Error("Session expired. Please log in again.");
+				}
+			} else {
+				throw new Error(errData.message ?? "Something went wront");
 			}
 		}
 		let message = "Request failed";

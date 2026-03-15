@@ -129,29 +129,37 @@ export default function SignUp() {
 		}
 
 		try {
-			await apiRequest(`http://${URL}:3000/api/v1/auth/signup`, {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
+			await apiRequest(
+				`http://${URL}:3000/api/v1/auth/signup`,
+				{
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+					},
+					data: JSON.stringify({
+						name: payload.name,
+						email: payload.email,
+						username: payload.username,
+						password: payload.password,
+					}),
 				},
-				body: JSON.stringify({
-					name: payload.name,
-					email: payload.email,
-					username: payload.username,
-					password: payload.password,
-				}),
-			});
+				false,
+			);
 
-			await apiRequest(`http://${URL}:3000/api/v1/auth/login`, {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
+			await apiRequest(
+				`http://${URL}:3000/api/v1/auth/login`,
+				{
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+					},
+					data: JSON.stringify({
+						username: payload.username,
+						password: payload.password,
+					}),
 				},
-				body: JSON.stringify({
-					username: payload.username,
-					password: payload.password,
-				}),
-			});
+				false,
+			);
 
 			router.replace("/messages");
 		} catch (error) {

@@ -69,7 +69,7 @@ export class AuthController {
 
 		if (!isPasswordMatch)
 			return res.status(401).json({
-				message: "Invaid credentials",
+				message: "Invalid credentials",
 			});
 
 		const accessToken = jwt.sign(

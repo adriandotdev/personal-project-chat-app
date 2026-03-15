@@ -6,6 +6,7 @@ import {
 } from "@/constants/fontFamily";
 import { URL } from "@/constants/url";
 import { useAuthStore } from "@/store/authStore";
+import { apiRequest } from "@/utils/apiRequest";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -43,28 +44,34 @@ const Login = () => {
 	});
 
 	const onSubmit = async (payload: FormData) => {
-		const response = await fetch(`http://${URL}:3000/api/v1/auth/login`, {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-			},
-			body: JSON.stringify({
-				username: payload.username,
-				password: payload.password,
-			}),
-		});
+		try {
+			const response = await apiRequest<{
+				accessToken: string;
+				refreshToken: string;
+				userId: number;
+			}>(
+				`http://${URL}:3000/api/v1/auth/login`,
+				{
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+					},
+					data: JSON.stringify({
+						username: payload.username,
+						password: payload.password,
+					}),
+				},
+				false,
+			);
 
-		const data = await response.json();
+			setAccessToken(response.accessToken);
+			setUserId(response.userId);
+			setAuthenticated(true);
 
-		if (response.status !== 200) {
-			setError(data.message);
-			return;
+			router.push("/messages");
+		} catch (err) {
+			if (err instanceof Error) setError(err.message);
 		}
-		setAccessToken(data.accessToken);
-		setUserId(data.userId);
-		setAuthenticated(true);
-
-		router.push("/messages");
 	};
 
 	const handleSignUpPress = () => {
