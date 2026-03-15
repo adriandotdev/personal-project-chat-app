@@ -40,13 +40,23 @@ This document describes the REST API endpoints for the Daily Bytes Chat Applicat
 
 ### GET `/api/v1/users`
 
-- **Description:** Get all users except the logged-in user, with conversationId if a conversation exists.
+- `Authorization: Bearer <JWT>`
+- `200 OK`: Success
+  - `{ data: [ { name, username, id, conversationId|null } ], message: "Successfully retrieved" }`
+- `401 Unauthorized`: Missing or invalid token
+
+### GET `/api/v1/users/profile`
+
+- **Description:** Get the profile of the currently logged-in user.
 - **Headers:**
   - `Authorization: Bearer <JWT>`
 - **Responses:**
   - `200 OK`: Success
-    - `{ data: [ { name, username, id, conversationId|null } ], message: "Successfully retrieved" }`
-  - `401 Unauthorized`: Missing or invalid token
+    - `{ data: { id, name, email, username, createdAt, password, mobileNumber }, message: "Profile retrieved" }`
+  - `404 Not Found`: User not found
+    - `{ message: "User not found" }`
+  - `500 Internal Server Error`: Failed to retrieve profile
+    - `{ message: "Failed to retrieve profile", error: string }`
 
 ---
 

@@ -104,10 +104,7 @@ export default function Chat() {
 						},
 					]}
 				>
-					<Text style={styles.messageText}>
-						{item.messageId}
-						{item.content}
-					</Text>
+					<Text style={styles.messageText}>{item.content}</Text>
 				</View>
 			);
 		},
