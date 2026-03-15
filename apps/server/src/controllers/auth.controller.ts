@@ -2,7 +2,7 @@ import bcrypt from "bcrypt";
 import { eq } from "drizzle-orm";
 import { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { Request, Response } from "express";
-import jwt from "jsonwebtoken";
+import jwt, { JsonWebTokenError } from "jsonwebtoken";
 import { Pool } from "pg";
 import { users } from "../db/schema";
 
@@ -78,7 +78,20 @@ export class AuthController {
 			},
 			process.env.JWT_SECRET ?? "",
 			{
-				expiresIn: "1h",
+				expiresIn: "10s",
+				issuer: process.env.JWT_ISSUER,
+				audience: process.env.JWT_AUDIENCE,
+				subject: user.username,
+			},
+		);
+
+		const refreshToken = jwt.sign(
+			{
+				id: user.id,
+			},
+			process.env.JWT_REFRESH_SECRET ?? "",
+			{
+				expiresIn: "15s",
 				issuer: process.env.JWT_ISSUER,
 				audience: process.env.JWT_AUDIENCE,
 				subject: user.username,
@@ -88,6 +101,56 @@ export class AuthController {
 		return res.status(200).json({
 			userId: user.id,
 			accessToken,
+			refreshToken,
 		});
+	};
+
+	refresh = async (req: Request, res: Response) => {
+		const { refreshToken } = req.body;
+
+		try {
+			jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET ?? "");
+
+			const decoded: { id: number; sub: string } = jwt.decode(refreshToken) as {
+				id: number;
+				sub: string;
+			};
+
+			const accessToken = jwt.sign(
+				{
+					id: decoded.id,
+				},
+				process.env.JWT_SECRET ?? "",
+				{
+					expiresIn: "10s",
+					issuer: process.env.JWT_ISSUER,
+					audience: process.env.JWT_AUDIENCE,
+					subject: decoded.sub,
+				},
+			);
+
+			const newRefreshToken = jwt.sign(
+				{
+					id: decoded.id,
+				},
+				process.env.JWT_REFRESH_SECRET ?? "",
+				{
+					expiresIn: "15s",
+					issuer: process.env.JWT_ISSUER,
+					audience: process.env.JWT_AUDIENCE,
+					subject: decoded.sub,
+				},
+			);
+
+			return res.json({
+				accessToken,
+				refreshToken: newRefreshToken,
+			});
+		} catch (err) {
+			if (err instanceof JsonWebTokenError) {
+			}
+
+			return res.json({ error: true });
+		}
 	};
 }
