@@ -62,25 +62,13 @@ export async function apiRequest<T>(
 		...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
 	};
 
-	console.log("[apiRequest] Request:", {
-		url,
-		options,
-		accessToken,
-		headers,
-		retry,
-	});
-
 	try {
 		const response = await axios({
 			url,
 			...options,
 			headers,
 		});
-		console.log("[apiRequest] Success:", {
-			url,
-			status: response.status,
-			data: response.data,
-		});
+
 		return response.data;
 	} catch (error) {
 		const err = error as AxiosError;

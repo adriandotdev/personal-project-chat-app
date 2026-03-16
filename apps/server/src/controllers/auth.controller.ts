@@ -78,7 +78,7 @@ export class AuthController {
 			},
 			process.env.JWT_SECRET ?? "",
 			{
-				expiresIn: "10s",
+				expiresIn: "10m",
 				issuer: process.env.JWT_ISSUER,
 				audience: process.env.JWT_AUDIENCE,
 				subject: user.username,
@@ -91,7 +91,7 @@ export class AuthController {
 			},
 			process.env.JWT_REFRESH_SECRET ?? "",
 			{
-				expiresIn: "15s",
+				expiresIn: "1h",
 				issuer: process.env.JWT_ISSUER,
 				audience: process.env.JWT_AUDIENCE,
 				subject: user.username,
@@ -122,7 +122,7 @@ export class AuthController {
 				},
 				process.env.JWT_SECRET ?? "",
 				{
-					expiresIn: "10s",
+					expiresIn: "10m",
 					issuer: process.env.JWT_ISSUER,
 					audience: process.env.JWT_AUDIENCE,
 					subject: decoded.sub,
@@ -135,7 +135,7 @@ export class AuthController {
 				},
 				process.env.JWT_REFRESH_SECRET ?? "",
 				{
-					expiresIn: "15s",
+					expiresIn: "1h",
 					issuer: process.env.JWT_ISSUER,
 					audience: process.env.JWT_AUDIENCE,
 					subject: decoded.sub,

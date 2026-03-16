@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { PRIMARY } from "@/constants/colors";
 import { PoppinsMedium } from "@/constants/fontFamily";
 import { URL } from "@/constants/url";
@@ -29,24 +30,27 @@ interface ChatItem {
 export default function MessagesScreen() {
 	const router = useRouter();
 
-	const { accessToken, userId, setAuthenticated } = useAuthStore();
+	const { accessToken, userId } = useAuthStore();
 	const { setChatName, setConversationId } = useChatStore();
 	const { socket } = useSocket();
 
 	const [chatList, setChatList] = useState<ChatItem[]>([]);
 
-	const fetchMessages = useCallback(async () => {
+	const [cursor, setCursor] = useState<string | undefined>(undefined);
+
+	const fetchChats = async () => {
 		try {
-			const response = await apiRequest<{ data: { chats: ChatItem[] } }>(
-				`http://${URL}:3000/api/v1/chats`,
-				{
-					method: "GET",
-					headers: {
-						Authorization: `Bearer ${accessToken}`,
-					},
+			const response = await apiRequest<{
+				data: { chats: ChatItem[]; nextCursor: string };
+			}>(`http://${URL}:3000/api/v1/chats?cursor=${cursor}`, {
+				method: "GET",
+				headers: {
+					Authorization: `Bearer ${accessToken}`,
 				},
-			);
-			setChatList(response.data.chats);
+			});
+
+			setChatList((prev) => [...prev, ...response.data.chats]);
+			setCursor(response.data.nextCursor);
 		} catch (error) {
 			if (error instanceof Error) {
 				if (error.message.includes("Session expired")) {
@@ -54,7 +58,7 @@ export default function MessagesScreen() {
 				}
 			}
 		}
-	}, [accessToken, router]);
+	};
 
 	const handleChatPress = async (item: ChatItem) => {
 		setChatName(item.conversationName);
@@ -65,18 +69,23 @@ export default function MessagesScreen() {
 
 	useFocusEffect(
 		useCallback(() => {
-			void fetchMessages();
-			return () => {
-				console.log("[ROUTE] messages is unfocused");
-			};
-		}, [fetchMessages]),
+			// Clear previous data
+			setChatList([]);
+			setCursor(undefined);
+
+			void fetchChats();
+
+			return () => console.log("[ROUTE] messages is unfocused");
+		}, []),
 	);
 
 	useEffect(() => {
 		if (!socket) return;
 
 		const handler = async () => {
-			await fetchMessages();
+			setChatList([]);
+			setCursor(undefined);
+			await fetchChats();
 		};
 
 		socket.on("chat_list_update", handler);
@@ -84,7 +93,7 @@ export default function MessagesScreen() {
 		return () => {
 			socket.off("chat_list_update", handler);
 		};
-	}, [socket, fetchMessages]);
+	}, [socket]);
 
 	return (
 		<View style={styles.container}>
@@ -132,6 +141,11 @@ export default function MessagesScreen() {
 					</TouchableOpacity>
 				)}
 				ItemSeparatorComponent={() => <View style={styles.separator} />}
+				onEndReached={() => {
+					if (!cursor) return;
+					void fetchChats();
+				}}
+				onEndReachedThreshold={0.05}
 			/>
 		</View>
 	);
@@ -193,7 +207,7 @@ const styles = StyleSheet.create({
 		paddingHorizontal: 18,
 		paddingBottom: 18,
 		borderBottomWidth: 0.5,
-		borderBottomColor: "#f8c534",
+		borderBottomColor: "#ffe9ae",
 	},
 	sender: {
 		fontWeight: "bold",

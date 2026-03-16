@@ -1,4 +1,4 @@
-import { and, eq, not } from "drizzle-orm";
+import { and, eq, gt, not } from "drizzle-orm";
 import { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { Request, Response } from "express";
 import { Pool } from "pg";
@@ -12,7 +12,15 @@ export class UsersController {
 	) {}
 
 	getUsers = async (req: Request, res: Response) => {
-		// Get all users except the logged-in user
+		const cursor = req.query.cursor;
+		const pageLimit = Number(req.query.limit) || 20;
+
+		const whereClause = [not(eq(users.id, req.token.id))];
+
+		if (!isNaN(Number(cursor))) {
+			whereClause.push(gt(users.id, Number(cursor)));
+		}
+
 		const allUsers = await this.db
 			.select({
 				name: users.name,
@@ -20,7 +28,9 @@ export class UsersController {
 				id: users.id,
 			})
 			.from(users)
-			.where(not(eq(users.id, req.token.id)));
+			.where(and(...whereClause))
+			.orderBy(users.id)
+			.limit(pageLimit);
 
 		// For each user, find conversationId if exists between logged-in user and that user
 		const result = await Promise.all(
@@ -61,9 +71,14 @@ export class UsersController {
 			}),
 		);
 
-		return res
-			.status(200)
-			.json({ data: result, message: "Successfully retrieved" });
+		// Determine next cursor
+		const nextCursor = result.length > 0 ? result[result.length - 1].id : null;
+
+		return res.status(200).json({
+			data: result,
+			nextCursor,
+			message: "Successfully retrieved",
+		});
 	};
 
 	getUserProfile = async (req: Request, res: Response) => {

@@ -17,6 +17,8 @@ export class ChatController {
 	) {}
 
 	getChats = async (req: Request, res: Response) => {
+		const cursor = req.query.cursor;
+
 		const conversationList = await this.db
 			.selectDistinct({
 				conversationId: conversations.id,
@@ -33,6 +35,18 @@ export class ChatController {
 			(convo) => convo.conversationId,
 		);
 
+		// Build where clause for cursor-based pagination
+		const latestMessagesWhere = [
+			inArray(messages.conversationId, conversationIds),
+		];
+
+		if (cursor && cursor !== "undefined" && cursor !== "null") {
+			const date = new Date(cursor as string);
+			if (!isNaN(date.getTime())) {
+				latestMessagesWhere.push(lt(messages.createdAt, date));
+			}
+		}
+
 		const latestMessages = await this.db
 			.select({
 				conversationId: messages.conversationId,
@@ -45,8 +59,9 @@ export class ChatController {
 			})
 			.from(messages)
 			.innerJoin(conversations, eq(conversations.lastMessageId, messages.id))
-			.where(inArray(messages.conversationId, conversationIds))
-			.orderBy(desc(messages.createdAt));
+			.where(and(...latestMessagesWhere))
+			.orderBy(desc(messages.createdAt))
+			.limit(10);
 
 		const participants = await this.db
 			.select({
@@ -76,6 +91,7 @@ export class ChatController {
 			data: {
 				chats: mapped,
 				participants,
+				nextCursor: mapped.length ? mapped[mapped.length - 1].createdAt : null,
 			},
 		});
 	};
