@@ -21,84 +21,93 @@ io.on("connection", (socket) => {
 	socket.join(`user_${userId}`);
 
 	socket.on("send_message", async (data) => {
-		console.log(
-			`[MESSAGE] userId=${userId} sent message to conversationId=${data.conversationId}: ${data.message}`,
-		);
-
-		const { conversationId, message } = data;
-
-		// Check if conversation id and message are provided.
-		if (!conversationId || !message) {
+		try {
 			console.log(
-				`[ERROR] Missing conversationId or message in send_message event`,
+				`[MESSAGE] userId=${userId} sent message to conversationId=${data.conversationId}: ${data.message}`,
 			);
-			return;
-		}
 
-		// Create new message
-		const newMessage = await db
-			.insert(messages)
-			.values({
+			const { conversationId, message } = data;
+
+			// Check if conversation id and message are provided.
+			if (!conversationId || !message) {
+				console.log(
+					`[ERROR] Missing conversationId or message in send_message event`,
+				);
+				return;
+			}
+
+			// Create new message
+			console.log({
 				conversationId: Number(conversationId),
 				senderId: Number(userId),
 				content: message,
-			})
-			.returning({
-				messageId: messages.id,
+			});
+			const newMessage = await db
+				.insert(messages)
+				.values({
+					conversationId: Number(conversationId),
+					senderId: Number(userId),
+					content: message,
+				})
+				.returning({
+					messageId: messages.id,
+				});
+
+			await db
+				.update(conversations)
+				.set({
+					lastMessageId: newMessage[0].messageId,
+				})
+				.where(eq(conversations.id, Number(conversationId)));
+
+			const participants = await db
+				.select({
+					id: conversationParticipants.userId,
+				})
+				.from(conversationParticipants)
+				.where(eq(conversationParticipants.conversationId, conversationId));
+
+			const mappedParticipants = participants.map((p) => p.id);
+
+			// Fetch latest 20 messages for the conversation, ordered by descending message ID
+			const latestMessages = await db
+				.select({
+					messageId: messages.id,
+					conversationId: messages.conversationId,
+					content: messages.content,
+					senderId: messages.senderId,
+					senderName: users.name,
+				})
+				.from(messages)
+				.innerJoin(users, eq(users.id, messages.senderId))
+				.where(and(eq(messages.conversationId, Number(conversationId))))
+				.orderBy(desc(messages.id))
+				.limit(20);
+
+			mappedParticipants.forEach((participantId) => {
+				if (participantId !== Number(userId)) {
+					io.to(`user_${participantId}`).emit("chat_list_update", {
+						conversationId,
+					});
+					console.log(
+						`[CHAT_LIST_UPDATE] Notified userId=${participantId} about conversationId=${conversationId}`,
+					);
+				}
+			});
+			// Notify all users joined in this conversation ID.
+			io.to(data.conversationId).emit("receive_message", {
+				messages: latestMessages,
+				nextCursor: latestMessages.length
+					? latestMessages[latestMessages.length - 1].messageId
+					: null,
 			});
 
-		await db
-			.update(conversations)
-			.set({
-				lastMessageId: newMessage[0].messageId,
-			})
-			.where(eq(conversations.id, Number(conversationId)));
-
-		const participants = await db
-			.select({
-				id: conversationParticipants.userId,
-			})
-			.from(conversationParticipants)
-			.where(eq(conversationParticipants.conversationId, conversationId));
-
-		const mappedParticipants = participants.map((p) => p.id);
-
-		// Fetch latest 20 messages for the conversation, ordered by descending message ID
-		const latestMessages = await db
-			.select({
-				messageId: messages.id,
-				conversationId: messages.conversationId,
-				content: messages.content,
-				senderId: messages.senderId,
-				senderName: users.name,
-			})
-			.from(messages)
-			.innerJoin(users, eq(users.id, messages.senderId))
-			.where(and(eq(messages.conversationId, Number(conversationId))))
-			.orderBy(desc(messages.id))
-			.limit(20);
-
-		mappedParticipants.forEach((participantId) => {
-			if (participantId !== Number(userId)) {
-				io.to(`user_${participantId}`).emit("chat_list_update", {
-					conversationId,
-				});
-				console.log(
-					`[CHAT_LIST_UPDATE] Notified userId=${participantId} about conversationId=${conversationId}`,
-				);
-			}
-		});
-		// Notify all users joined in this conversation ID.
-		io.to(data.conversationId).emit("receive_message", {
-			messages: latestMessages,
-			nextCursor: latestMessages.length
-				? latestMessages[latestMessages.length - 1].messageId
-				: null,
-		});
-
-		console.log(
-			`[RECEIVE_MESSAGE] Emitted to conversationId=${data.conversationId}`,
-		);
+			console.log(
+				`[RECEIVE_MESSAGE] Emitted to conversationId=${data.conversationId}`,
+			);
+		} catch (err) {
+			console.log(`ERROR SENDING MESSAGE: ${err}`);
+		}
 	});
 
 	socket.on("join_conversation", async (data) => {
@@ -216,6 +225,12 @@ io.on("connection", (socket) => {
 		console.log(
 			`[TYPING] userId=${userId} ended typing in conversationId=${data.conversationId}`,
 		);
+	});
+
+	socket.on("delete_message", (data) => {
+		(data as number[]).forEach((id) => {
+			io.to(`user_${id}`).emit("chat_list_update");
+		});
 	});
 });
 

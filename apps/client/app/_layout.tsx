@@ -1,3 +1,4 @@
+import { SocketConnectionProvider } from "@/contexts/SocketConnectionContext";
 import { useAuthStore } from "@/store/authStore";
 import {
 	Poppins_400Regular,
@@ -39,25 +40,35 @@ export default function RootLayout() {
 	}
 
 	return (
-		// <SafeAreaProvider>
-		<Stack screenOptions={{ headerShown: false }}>
-			<Stack.Protected guard={authenticated}>
-				<Stack.Screen name="(tabs)" />
-			</Stack.Protected>
-			<Stack.Protected guard={!authenticated}>
-				<Stack.Screen name="index" />
-			</Stack.Protected>
+		<SocketConnectionProvider>
+			<Stack screenOptions={{ headerShown: false }}>
+				<Stack.Protected guard={authenticated}>
+					<Stack.Screen name="(tabs)" />
+				</Stack.Protected>
+				<Stack.Protected guard={!authenticated}>
+					<Stack.Screen name="index" />
+				</Stack.Protected>
 
-			<Stack.Screen
-				name="confirmation-modal"
-				options={{
-					presentation: "formSheet",
-					animation: "slide_from_bottom",
-					sheetAllowedDetents: [0.45],
-					sheetGrabberVisible: true,
-				}}
-			/>
-		</Stack>
-		// </SafeAreaProvider>
+				<Stack.Screen
+					name="confirmation-modal"
+					options={{
+						presentation: "formSheet",
+						animation: "slide_from_bottom",
+						sheetAllowedDetents: [0.45],
+						sheetGrabberVisible: true,
+					}}
+				/>
+
+				<Stack.Screen
+					name="conversation-delete-modal"
+					options={{
+						presentation: "formSheet",
+						animation: "slide_from_bottom",
+						sheetAllowedDetents: [0.45],
+						sheetGrabberVisible: true,
+					}}
+				/>
+			</Stack>
+		</SocketConnectionProvider>
 	);
 }

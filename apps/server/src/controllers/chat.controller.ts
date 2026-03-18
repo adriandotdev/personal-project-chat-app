@@ -128,4 +128,37 @@ export class ChatController {
 				: null,
 		});
 	};
+
+	deleteChatByConversationId = async (req: Request, res: Response) => {
+		const conversationId = req.body.conversationId;
+		const deleteBoth = req.body.deleteBoth;
+
+		let chatParticipants = undefined;
+
+		if (deleteBoth) {
+			chatParticipants = await this.db
+				.select({ id: conversationParticipants.userId })
+				.from(conversationParticipants)
+				.where(
+					and(eq(conversationParticipants.conversationId, conversationId)),
+				);
+
+			await this.db
+				.delete(messages)
+				.where(eq(messages.conversationId, conversationId));
+
+			await this.db
+				.delete(conversationParticipants)
+				.where(eq(conversationParticipants.conversationId, conversationId));
+
+			await this.db
+				.delete(conversations)
+				.where(eq(conversations.id, conversationId));
+		}
+
+		return res.json({
+			message: "Conversation successfully deleted",
+			data: chatParticipants,
+		});
+	};
 }

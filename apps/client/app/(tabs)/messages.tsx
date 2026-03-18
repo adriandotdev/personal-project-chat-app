@@ -5,18 +5,12 @@ import { URL } from "@/constants/url";
 import { useSocket } from "@/contexts/SocketConnectionContext";
 import { useAuthStore } from "@/store/authStore";
 import { useChatStore } from "@/store/chatStore";
+import { useConversationDeleteModalStore } from "@/store/conversationDeleteModalStore";
 import { apiRequest } from "@/utils/apiRequest";
 import { useFocusEffect, useRouter } from "expo-router";
 import { SquarePen } from "lucide-react-native";
 import React, { useCallback, useEffect, useState } from "react";
-import {
-	FlatList,
-	Pressable,
-	StyleSheet,
-	Text,
-	TouchableOpacity,
-	View,
-} from "react-native";
+import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 
 interface ChatItem {
 	conversationId: number;
@@ -32,6 +26,8 @@ export default function MessagesScreen() {
 
 	const { accessToken, userId } = useAuthStore();
 	const { setChatName, setConversationId } = useChatStore();
+	const { setConversationId: setConversationIdToBeDeleted } =
+		useConversationDeleteModalStore();
 	const { socket } = useSocket();
 
 	const [chatList, setChatList] = useState<ChatItem[]>([]);
@@ -117,7 +113,12 @@ export default function MessagesScreen() {
 				data={chatList}
 				keyExtractor={(item) => item.conversationId.toString()}
 				renderItem={({ item }) => (
-					<TouchableOpacity
+					<Pressable
+						onLongPress={() => {
+							setConversationIdToBeDeleted(item.conversationId);
+
+							router.push("/conversation-delete-modal");
+						}}
 						onPress={() => handleChatPress(item)}
 						style={styles.chatRow}
 					>
@@ -138,7 +139,7 @@ export default function MessagesScreen() {
 									: `You: ${item.content}`}
 							</Text>
 						</View>
-					</TouchableOpacity>
+					</Pressable>
 				)}
 				ItemSeparatorComponent={() => <View style={styles.separator} />}
 				onEndReached={() => {

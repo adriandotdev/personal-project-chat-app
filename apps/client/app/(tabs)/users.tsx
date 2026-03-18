@@ -9,10 +9,10 @@ import { useSocket } from "@/contexts/SocketConnectionContext";
 import { useAuthStore } from "@/store/authStore";
 import { Message, useChatStore } from "@/store/chatStore";
 import { apiRequest } from "@/utils/apiRequest";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 
 import { ArrowLeftIcon, SendIcon } from "lucide-react-native";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
 	FlatList,
 	Pressable,
@@ -43,9 +43,22 @@ export default function Users() {
 	// States
 	const [users, setUsers] = useState<User[]>([]);
 
+	const getUsers = async () => {
+		const data = (await apiRequest(`http:${URL}:3000/api/v1/users`, {
+			headers: {
+				Authorization: `Bearer ${accessToken}`,
+			},
+		})) as { data: User[] };
+
+		console.log("[users.tsx] Data: ", data.data);
+		setUsers(data.data);
+	};
+
 	const handleChatNavigation = async (item: User) => {
+		setMessages([]);
+		setChatName("");
+
 		if (item.conversationId) {
-			console.log("[users.tsx] Conversation Exists");
 			const data = await apiRequest(
 				`http://${URL}:3000/api/v1/chats/messages/${item.conversationId}`,
 				{
@@ -63,35 +76,39 @@ export default function Users() {
 			socket?.emit("join_conversation", {
 				conversationId: item.conversationId,
 			});
+			router.push("/chat");
 		} else {
 			console.log("[users.tsx] Create New Conversation");
-
 			setChatName(item.name);
+
+			// Listen for conversation_created event ONCE
+			const handleConversationCreated = (data: { conversationId: number }) => {
+				setConversationId(data.conversationId);
+				// Optionally clear messages again to be sure
+				setMessages([]);
+				socket?.off("conversation_created", handleConversationCreated);
+				router.push("/chat");
+			};
+			socket?.on("conversation_created", handleConversationCreated);
+
 			socket?.emit("create_conversation", {
 				participantIds: [item.id],
 				creatorId: userId,
 			});
 		}
-
-		router.push("/chat");
 	};
 
 	const handleBackPress = () => {
 		router.back();
 	};
 
+	useFocusEffect(
+		useCallback(() => {
+			void getUsers();
+		}, []),
+	);
+
 	useEffect(() => {
-		const getUsers = async () => {
-			const data = (await apiRequest(`http:${URL}:3000/api/v1/users`, {
-				headers: {
-					Authorization: `Bearer ${accessToken}`,
-				},
-			})) as { data: User[] };
-
-			console.log("[users.tsx] Data: ", data.data);
-			setUsers(data.data);
-		};
-
 		void getUsers();
 	}, [accessToken]);
 
