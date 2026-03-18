@@ -49,17 +49,13 @@ export default function ConfirmationModal() {
 
 	return (
 		<SafeAreaView style={[styles.safeAreaView, { top: top - 16 }]}>
-			<Text style={styles.modalText}>
-				Are you sure you want to delete this conversation?
-			</Text>
+			<Text style={styles.modalText}>Delete Conversation</Text>
 
 			<Pressable
 				onPress={handleDeleteConversation}
 				style={styles.confirmButton}
 			>
-				<Text style={styles.logoutButtonText}>
-					Yes, delete this conversation
-				</Text>
+				<Text style={styles.logoutButtonText}>Delete Conversation</Text>
 			</Pressable>
 
 			<Pressable
@@ -68,7 +64,7 @@ export default function ConfirmationModal() {
 				}}
 				style={styles.cancelButton}
 			>
-				<Text style={styles.cancelButtonText}>Cancel</Text>
+				<Text style={styles.cancelButtonText}>Go Back</Text>
 			</Pressable>
 
 			<Pressable
@@ -80,7 +76,7 @@ export default function ConfirmationModal() {
 					onValueChange={setChecked}
 					color={isChecked ? PRIMARY : undefined}
 				/>
-				<Text>Delete to other person as well</Text>
+				<Text>Also delete for the other participant</Text>
 			</Pressable>
 		</SafeAreaView>
 	);
