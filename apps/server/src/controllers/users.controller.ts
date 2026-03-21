@@ -13,7 +13,7 @@ export class UsersController {
 
 	getUsers = async (req: Request, res: Response) => {
 		const cursor = req.query.cursor;
-		const pageLimit = Number(req.query.limit) || 20;
+		const pageLimit = Number(req.query.limit) || 10;
 
 		const whereClause = [not(eq(users.id, req.token.id))];
 
@@ -30,7 +30,7 @@ export class UsersController {
 			.from(users)
 			.where(and(...whereClause))
 			.orderBy(users.id)
-			.limit(pageLimit);
+			.limit(pageLimit + 1);
 
 		// For each user, find conversationId if exists between logged-in user and that user
 		const result = await Promise.all(
@@ -72,11 +72,16 @@ export class UsersController {
 		);
 
 		// Determine next cursor
-		const nextCursor = result.length > 0 ? result[result.length - 1].id : null;
+		const hasMore = allUsers.length > pageLimit;
+
+		const usersPage = hasMore ? allUsers.slice(0, pageLimit) : allUsers;
+
+		const nextCursor = hasMore ? usersPage[usersPage.length - 1].id : null;
 
 		return res.status(200).json({
-			data: result,
+			data: usersPage,
 			nextCursor,
+			hasMore,
 			message: "Successfully retrieved",
 		});
 	};

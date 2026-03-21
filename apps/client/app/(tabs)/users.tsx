@@ -42,16 +42,22 @@ export default function Users() {
 
 	// States
 	const [users, setUsers] = useState<User[]>([]);
+	const [cursor, setCursor] = useState<number | null>(null);
 
 	const getUsers = async () => {
-		const data = (await apiRequest(`http:${URL}:3000/api/v1/users`, {
-			headers: {
-				Authorization: `Bearer ${accessToken}`,
+		const data = (await apiRequest(
+			`http:${URL}:3000/api/v1/users?cursor=${cursor}`,
+			{
+				headers: {
+					Authorization: `Bearer ${accessToken}`,
+				},
 			},
-		})) as { data: User[] };
+		)) as { data: User[]; nextCursor: number | null; hasMore: boolean };
 
 		console.log("[users.tsx] Data: ", data.data);
-		setUsers(data.data);
+		console.log("[users.tsx] Cursor: ", data.nextCursor);
+		setUsers([...users, ...data.data]);
+		setCursor(data.nextCursor);
 	};
 
 	const handleChatNavigation = async (item: User) => {
@@ -104,6 +110,8 @@ export default function Users() {
 
 	useFocusEffect(
 		useCallback(() => {
+			setUsers([]);
+			setCursor(null);
 			void getUsers();
 		}, []),
 	);
@@ -201,6 +209,13 @@ export default function Users() {
 					</Pressable>
 				)}
 				ItemSeparatorComponent={() => <View style={styles.separator} />}
+				showsVerticalScrollIndicator={false}
+				onEndReachedThreshold={0.005}
+				onEndReached={() => {
+					if (cursor === null) return;
+
+					void getUsers();
+				}}
 			/>
 		</View>
 	);
