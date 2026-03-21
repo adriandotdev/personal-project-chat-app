@@ -38,11 +38,13 @@ export default function ConfirmationModal() {
 			}),
 		});
 
-		let participants = response.data
-			.map((item) => item.id)
-			.filter((item) => item !== userId);
+		if (response.data) {
+			let participants = response.data
+				.map((item) => item.id)
+				.filter((item) => item !== userId);
 
-		socket?.emit("delete_message", participants);
+			socket?.emit("delete_message", participants);
+		}
 
 		router.back();
 	};
