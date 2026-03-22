@@ -59,26 +59,34 @@ export default function Users() {
 		searching?: boolean;
 		scrolling?: boolean;
 	}) => {
-		let url = searchUsername
-			? `http://${URL}:3000/api/v1/users?cursor=${cursor}&username=${searchUsername}`
-			: cursor
-				? `http://${URL}:3000/api/v1/users?cursor=${cursor}`
-				: `http://${URL}:3000/api/v1/users`;
+		try {
+			let url = searchUsername
+				? `http://${URL}:3000/api/v1/users?cursor=${cursor}&username=${searchUsername}`
+				: cursor
+					? `http://${URL}:3000/api/v1/users?cursor=${cursor}`
+					: `http://${URL}:3000/api/v1/users`;
 
-		const data = (await apiRequest(url, {
-			headers: {
-				Authorization: `Bearer ${accessToken}`,
-			},
-		})) as { data: User[]; nextCursor: number | null; hasMore: boolean };
+			const data = (await apiRequest(url, {
+				headers: {
+					Authorization: `Bearer ${accessToken}`,
+				},
+			})) as { data: User[]; nextCursor: number | null; hasMore: boolean };
 
-		if (initial) {
-			setUsers(data.data);
-		} else if (searching) {
-			setUsers(data.data);
-		} else if (scrolling) {
-			setUsers((prev) => [...prev, ...data.data]);
+			if (initial) {
+				setUsers(data.data);
+			} else if (searching) {
+				setUsers(data.data);
+			} else if (scrolling) {
+				setUsers((prev) => [...prev, ...data.data]);
+			}
+			setCursor(data.nextCursor);
+		} catch (err) {
+			if (err instanceof Error) {
+				if (err.message.includes("Session expired")) {
+					router.replace("/login");
+				}
+			}
 		}
-		setCursor(data.nextCursor);
 	};
 
 	const handleChatNavigation = async (item: User) => {
