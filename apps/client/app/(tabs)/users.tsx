@@ -12,7 +12,7 @@ import { apiRequest } from "@/utils/apiRequest";
 import { useFocusEffect, useRouter } from "expo-router";
 
 import { ArrowLeftIcon, SendIcon } from "lucide-react-native";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
 	FlatList,
 	Pressable,
@@ -43,20 +43,41 @@ export default function Users() {
 	// States
 	const [users, setUsers] = useState<User[]>([]);
 	const [cursor, setCursor] = useState<number | null>(null);
+	const [search, setSearch] = useState("");
 
-	const getUsers = async () => {
-		const data = (await apiRequest(
-			`http:${URL}:3000/api/v1/users?cursor=${cursor}`,
-			{
-				headers: {
-					Authorization: `Bearer ${accessToken}`,
-				},
+	// Refs
+	const debounceTimer = useRef<number>(undefined);
+
+	const getUsers = async ({
+		searchUsername,
+		initial,
+		searching,
+		scrolling,
+	}: {
+		searchUsername?: string;
+		initial?: boolean;
+		searching?: boolean;
+		scrolling?: boolean;
+	}) => {
+		let url = searchUsername
+			? `http://${URL}:3000/api/v1/users?cursor=${cursor}&username=${searchUsername}`
+			: cursor
+				? `http://${URL}:3000/api/v1/users?cursor=${cursor}`
+				: `http://${URL}:3000/api/v1/users`;
+
+		const data = (await apiRequest(url, {
+			headers: {
+				Authorization: `Bearer ${accessToken}`,
 			},
-		)) as { data: User[]; nextCursor: number | null; hasMore: boolean };
+		})) as { data: User[]; nextCursor: number | null; hasMore: boolean };
 
-		console.log("[users.tsx] Data: ", data.data);
-		console.log("[users.tsx] Cursor: ", data.nextCursor);
-		setUsers([...users, ...data.data]);
+		if (initial) {
+			setUsers(data.data);
+		} else if (searching) {
+			setUsers(data.data);
+		} else if (scrolling) {
+			setUsers((prev) => [...prev, ...data.data]);
+		}
 		setCursor(data.nextCursor);
 	};
 
@@ -108,17 +129,24 @@ export default function Users() {
 		router.back();
 	};
 
+	useEffect(() => {
+		if (debounceTimer.current) {
+			clearTimeout(debounceTimer.current);
+		}
+
+		debounceTimer.current = setTimeout(() => {
+			void getUsers({
+				searching: true,
+				searchUsername: search,
+			});
+		}, 500);
+	}, [search]);
+
 	useFocusEffect(
 		useCallback(() => {
-			setUsers([]);
-			setCursor(null);
-			void getUsers();
+			void getUsers({ initial: true });
 		}, []),
 	);
-
-	useEffect(() => {
-		void getUsers();
-	}, [accessToken]);
 
 	return (
 		<View style={styles.container}>
@@ -145,6 +173,11 @@ export default function Users() {
 				style={[styles.input]}
 				placeholder="@username"
 				autoCapitalize="none"
+				onChangeText={(value) => {
+					setCursor(null);
+					setUsers([]);
+					setSearch(value);
+				}}
 			/>
 
 			<FlatList
@@ -214,7 +247,7 @@ export default function Users() {
 				onEndReached={() => {
 					if (cursor === null) return;
 
-					void getUsers();
+					void getUsers({ scrolling: true });
 				}}
 			/>
 		</View>

@@ -1,4 +1,4 @@
-import { and, eq, gt, not } from "drizzle-orm";
+import { and, eq, gt, ilike, not } from "drizzle-orm";
 import { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { Request, Response } from "express";
 import { Pool } from "pg";
@@ -13,12 +13,19 @@ export class UsersController {
 
 	getUsers = async (req: Request, res: Response) => {
 		const cursor = req.query.cursor;
+		const username = req.query.username;
 		const pageLimit = Number(req.query.limit) || 10;
 
 		const whereClause = [not(eq(users.id, req.token.id))];
 
-		if (!isNaN(Number(cursor))) {
-			whereClause.push(gt(users.id, Number(cursor)));
+		if (username) {
+			whereClause.push(ilike(users.username, `%${username}%`));
+		}
+
+		let cursorNum = cursor ? Number(cursor) : undefined;
+
+		if (cursorNum) {
+			whereClause.push(gt(users.id, cursorNum));
 		}
 
 		const allUsers = await this.db
