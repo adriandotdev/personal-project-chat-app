@@ -38,8 +38,8 @@ const Login = () => {
 		formState: { errors, isSubmitting },
 	} = useForm<FormData>({
 		defaultValues: {
-			username: "username",
-			password: "password",
+			username: "",
+			password: "",
 		},
 	});
 
